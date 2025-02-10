@@ -1,0 +1,176 @@
+import time
+import os
+import subprocess
+import psutil
+from fastapi import FastAPI, Request, HTTPException, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from loguru import logger
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+from utils.pathFinder import PathFinder
+from utils.helper import commandGenerator
+
+# Initialize FastAPI app
+app = FastAPI()
+
+# Setup CORS for API access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Setup Jinja2 for HTML templates
+templates = Jinja2Templates(directory="web_server/templates")
+
+# Logging setup
+LOG_DIR = "logs"
+os.makedirs(LOG_DIR, exist_ok=True)
+logger.add(
+    os.path.join(LOG_DIR, "web_server.log"),
+    rotation="5MB",
+    retention="10 days",
+    level="INFO",
+)
+
+
+### 📌 System Information Functions ###
+def get_system_info():
+    """Retrieve system resource usage and temperature."""
+    cpu_usage = psutil.cpu_percent(interval=1)
+    memory = psutil.virtual_memory()
+    memory_used = memory.used / (1024**2)  # Convert bytes to MB
+    memory_total = memory.total / (1024**2)
+    memory_percent = memory.percent
+    uptime_seconds = time.time() - psutil.boot_time()
+    uptime = time.strftime("%H:%M:%S", time.gmtime(uptime_seconds))
+
+    # Get CPU Temperature (Only works on Raspberry Pi)
+    try:
+        with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+            temp = int(f.read().strip()) / 1000.0
+    except FileNotFoundError:
+        temp = None  # Temperature not available
+
+    return {
+        "cpu_usage": cpu_usage,
+        "memory_used": round(memory_used, 2),
+        "memory_total": round(memory_total, 2),
+        "memory_percent": memory_percent,
+        "uptime": uptime,
+        "cpu_temp": round(temp, 2) if temp is not None else "N/A",
+    }
+
+
+### 📌 New API Endpoints ###
+@app.get("/wifi")
+async def wifi_status():
+    """Returns the current WiFi status of the Raspberry Pi."""
+    try:
+        result = subprocess.run(["iwconfig", "wlan0"], capture_output=True, text=True)
+        return {"wifi_status": result.stdout}
+    except Exception as e:
+        logger.error(f"Error retrieving WiFi status: {e}")
+        return {"error": "Failed to retrieve WiFi status"}
+
+
+@app.get("/connected-devices")
+async def connected_devices():
+    """Lists devices connected to the Raspberry Pi hotspot."""
+    try:
+        result = subprocess.run(["arp", "-a"], capture_output=True, text=True)
+        return {"connected_devices": result.stdout.split("\n")}
+    except Exception as e:
+        logger.error(f"Error retrieving connected devices: {e}")
+        return {"error": "Failed to retrieve connected devices"}
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+async def dashboard(request: Request):
+    """Returns an HTML page with real-time system stats."""
+    system_info = get_system_info()
+    return templates.TemplateResponse(
+        "dashboard.html", {"request": request, "system": system_info}
+    )
+
+
+@app.get("/api/system-info")
+async def system_info():
+    """Returns system statistics in JSON format."""
+    return get_system_info()
+
+
+### 📌 Existing Code - Unchanged ###
+class PathFindingRequest(BaseModel):
+    obstacles: list
+    retrying: bool
+    robot_x: int
+    robot_y: int
+    robot_dir: int
+    big_turn: int = 0
+
+
+@app.get("/")
+def readRoot():
+    return {"Backend": "Running"}
+
+
+@app.get("/status")
+async def status():
+    """Health check endpoint."""
+    return {"result": "ok"}
+
+
+@app.post("/path")
+async def pathFinding(request: PathFindingRequest):
+    """Main endpoint for the path finding algorithm."""
+    content = request.model_dump()
+
+    # Extract data from request
+    obstacles = content["obstacles"]
+    big_turn = int(content["big_turn"])
+    retrying = content["retrying"]
+    robot_x, robot_y = content["robot_x"], content["robot_y"]
+    robot_direction = int(content["robot_dir"])
+
+    # Initialize PathFinder
+    maze_solver = PathFinder(20, 20, robot_x, robot_y, robot_direction, big_turn=None)
+
+    # Add obstacles
+    for ob in obstacles:
+        maze_solver.add_obstacle(ob["x"], ob["y"], ob["d"], ob["id"])
+
+    start = time.time()
+    optimal_path, distance = maze_solver.get_optimal_order_dp(retrying=retrying)
+    logger.info(
+        f"Pathfinding time: {time.time() - start:.2f}s | Distance: {distance} units"
+    )
+
+    # Generate movement commands
+    commands = commandGenerator(optimal_path, obstacles)
+
+    # Process path results
+    path_results = [optimal_path[0].get_dict()]
+    i = 0
+    for command in commands:
+        if command.startswith(("SNAP", "FIN")):
+            continue
+        elif command.startswith(("FW", "FS", "BW", "BS")):
+            i += int(command[2:]) // 10
+        else:
+            i += 1
+        path_results.append(optimal_path[i].get_dict())
+
+    return {
+        "data": {"distance": distance, "path": path_results, "commands": commands},
+        "error": None,
+    }
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="0.0.0.0", port=8000)
