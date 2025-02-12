@@ -1,0 +1,15 @@
+[Unit]
+Description=Hotspot Setup Service
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /home/mdp23/MDP_RPI/config/hotspot_setup.sh
+RemainAfterExit=yes
+User=mpd23
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+

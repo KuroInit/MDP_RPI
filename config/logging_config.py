@@ -3,7 +3,7 @@ import yaml
 from loguru import logger
 
 # yaml file for config all new sinks require update this file
-CONFIG_PATH = "/home/mdp23/root_sys/config/logging.yaml"
+CONFIG_PATH = "/home/mdp23/MDP_RPI/config/logging.yaml"
 loggers = {}
 
 

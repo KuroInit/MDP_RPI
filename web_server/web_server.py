@@ -8,8 +8,8 @@ from fastapi.responses import HTMLResponse
 from loguru import logger
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
-from utils.pathFinder import PathFinder
-from utils.helper import commandGenerator
+from web_server.utils.pathFinder import PathFinder
+from web_server.utils.helper import commandGenerator
 
 # Initialize FastAPI app
 app = FastAPI()

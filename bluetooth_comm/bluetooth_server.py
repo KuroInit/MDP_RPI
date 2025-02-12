@@ -3,6 +3,16 @@ import json
 import time
 import os
 from config.logging_config import loggers
+import sys
+
+#print("current path")
+#for path in sys.path:
+#    print(" ", path)
+
+#absolute path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
 
 
 # server init

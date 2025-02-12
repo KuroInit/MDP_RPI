@@ -2,7 +2,7 @@ import os
 import time
 import glob
 import torch
-from utils.consts import MODEL_NAME
+from web_server.utils.consts import MODEL_NAME
 import numpy as np
 from PIL import Image
 import cv2

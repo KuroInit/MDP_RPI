@@ -1,6 +1,6 @@
 from typing import List
-from utils.consts import Direction, EXPANDED_CELL, SCREENSHOT_COST
-from utils.helper import isValid
+from web_server.utils.consts import Direction, EXPANDED_CELL, SCREENSHOT_COST
+from web_server.utils.helper import isValid
 
 
 class CellState:

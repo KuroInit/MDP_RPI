@@ -2,9 +2,9 @@ import heapq
 import math
 from typing import List
 import numpy as np
-from utils.entities.Robot import Robot
-from utils.entities.Entity import Obstacle, CellState, Grid
-from utils.consts import Direction, MOVE_DIRECTION, TURN_FACTOR, ITERATIONS, TURN_RADIUS, SAFE_COST
+from web_server.utils.entities.Robot import Robot
+from web_server.utils.entities.Entity import Obstacle, CellState, Grid
+from web_server.utils.consts import Direction, MOVE_DIRECTION, TURN_FACTOR, ITERATIONS, TURN_RADIUS, SAFE_COST
 from python_tsp.exact import solve_tsp_dynamic_programming
 
 turn_wrt_big_turns = [[3 * TURN_RADIUS, TURN_RADIUS],

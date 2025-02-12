@@ -1,4 +1,4 @@
-from utils.consts import WIDTH, HEIGHT, Direction
+from web_server.utils.consts import WIDTH, HEIGHT, Direction
 
 
 def isValid(center_x: int, center_y: int):

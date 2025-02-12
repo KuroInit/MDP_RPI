@@ -1,27 +1,27 @@
 #Use this file to add more sinks to track for logging
 loggers:
   bluetooth:
-    path: "/home/mdp23/logs/bluetooth.log"
+    path: "/home/mdp23/MDP_RPI/logs/bluetooth.log"
     rotation: "1 MB"
-    retention: "5 files"
+    retention: 5
     level: "INFO"
     format: "{time} | {level} | {message}"
     backtrace: true
     diagnose: true
 
   webserver:
-    path: "/home/mdp23/logs/webserver.log"
+    path: "/home/mdp23/MDP_RPI/logs/webserver.log"
     rotation: "1 MB"
-    retention: "5 files"
+    retention: 5
     level: "DEBUG"
     format: "{time} - {level} - {message}"
     backtrace: true
     diagnose: true
 
   stm_comm:
-    path: "/home/mdp23/logs/stm_comm.log"
+    path: "/home/mdp23/MDP_RPI/logs/stm_comm.log"
     rotation: "1 MB"
-    retention: "5 files"
+    retention: 5
     level: "INFO"
     format: "{time} | {level} | {module} | {message}"
     backtrace: true

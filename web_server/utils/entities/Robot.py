@@ -1,6 +1,6 @@
 from typing import List
-from utils.entities.Entity import CellState
-from utils.consts import Direction
+from web_server.utils.entities.Entity import CellState
+from web_server.utils.consts import Direction
 
 
 class Robot:

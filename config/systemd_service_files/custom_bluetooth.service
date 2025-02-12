@@ -3,9 +3,9 @@ Description=Bluetooth Listener
 After=network.target
 
 [Service]
-ExecStart=/home/mdp23/MDP_RPI/.venv/bin/python /home/mdp23/MDP_RPI/bluetooth/bluetooth_listener.py
+ExecStart=/home/mdp23/MDP_RPI/.venv/bin/python /home/mdp23/MDP_RPI/bluetooth_comm/bluetooth_listener.py
 Restart=always
-User=pi
+User=mdp23
 Environment=PYTHONUNBUFFERED=1
 
 [Install]
