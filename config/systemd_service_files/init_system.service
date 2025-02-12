@@ -1,0 +1,12 @@
+[Unit]
+Description=Initialization Service for Robot Project
+After=network.target
+
+[Service]
+ExecStart=/home/mdp23/MDP_RPI/.venv/bin/python /home/mdp23/MDP_RPI/scripts/init_system.py
+Restart=no
+User=pi
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

@@ -3,7 +3,7 @@ Description= STM communation Service
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/python3 /home/mdp23/root_sys/stm_comm/serial_comm.py
+ExecStart=/home/mdp23/MDP_RPI/.venv/bin/python /home/mdp23/MDP_RPI/stm_comm/serial_comm.py
 Restart=always
 User=pi
 Environment=PYTHONUNBUFFERED=1
