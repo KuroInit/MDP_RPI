@@ -1,7 +1,7 @@
 #Use this file to add more sinks to track for logging
 loggers:
   bluetooth:
-    path: "/home/mdp23/root_sys/logs/bluetooth.log"
+    path: "/home/mdp23/logs/bluetooth.log"
     rotation: "1 MB"
     retention: "5 files"
     level: "INFO"
@@ -10,7 +10,7 @@ loggers:
     diagnose: true
 
   webserver:
-    path: "/home/mdp23/root_sys/logs/webserver.log"
+    path: "/home/mdp23/logs/webserver.log"
     rotation: "1 MB"
     retention: "5 files"
     level: "DEBUG"
@@ -19,7 +19,7 @@ loggers:
     diagnose: true
 
   stm_comm:
-    path: "/home/mdp23/root_sys/logs/stm_comm.log"
+    path: "/home/mdp23/logs/stm_comm.log"
     rotation: "1 MB"
     retention: "5 files"
     level: "INFO"
