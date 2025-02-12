@@ -1,0 +1,12 @@
+[Unit]
+Description=Bluetooth Listener 
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/mdp23/root_sys/bluetooth/bluetooth_listener.py
+Restart=always
+User=pi
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

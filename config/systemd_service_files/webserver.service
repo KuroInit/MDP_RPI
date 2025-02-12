@@ -1,0 +1,13 @@
+[Unit]
+Description= Webserver Service
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/uvicorn --host 0.0.0.0 --port 8000 --log-level info /home/mdp23/root_sys/web_server/app:app
+Restart=always
+User=pi
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+
