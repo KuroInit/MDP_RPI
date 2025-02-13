@@ -2,20 +2,19 @@ import bluetooth
 import json
 import time
 import os
-from config.logging_config import loggers
 import sys
+from config.logging_config import loggers
 
-#print("current path")
-#for path in sys.path:
-#    print(" ", path)
-
-#absolute path
+# Ensure project root is in sys.path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
+# Global variable to store the current task mode
+current_task = None
 
-# server init
+
+# Server init
 def start_bluetooth_service():
     logger = loggers["bluetooth"]
     server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
@@ -24,7 +23,7 @@ def start_bluetooth_service():
     port = server_sock.getsockname()[1]
     logger.info(f"Bluetooth listening on RFCOMM port {port}")
 
-    # discoverable
+    # Discoverable
     bluetooth.advertise_service(
         server_sock,
         "RobotProjectBTService",
@@ -62,11 +61,10 @@ def handle_client_session(client_sock, logger):
             break
     client_sock.close()
 
-    # message procesing according to doc
-    # TODO: tell jonathan retrive image and results
-
 
 def process_message(message_str, client_sock, logger):
+    global current_task  # Allow modification of the global task variable
+
     parts = message_str.split(",")
     if not parts:
         logger.warning("Empty message parts.")
@@ -86,7 +84,7 @@ def process_message(message_str, client_sock, logger):
     elif msg_type == "MOVE":
         handle_move(parts, logger)
     elif msg_type == "CMD":
-        handle_cmd(parts, logger)
+        handle_cmd(parts, logger, client_sock)  # Pass `client_sock` to send responses
     elif msg_type == "SEND_IMAGE":
         file_path = parts[1] if len(parts) > 1 else None
         if file_path:
@@ -151,12 +149,26 @@ def handle_move(parts, logger):
     logger.info(f"Movement command: {direction}")
 
 
-def handle_cmd(parts, logger):
+def handle_cmd(parts, logger, client_sock):
+    global current_task
+
     if len(parts) < 2:
         logger.error("CMD message missing parameters.")
         return
-    command = parts[1]
-    logger.info(f"Special command: {command}")
+
+    command = parts[1].strip().lower()
+
+    if command == "beginexplore":
+        current_task = "exploration"
+        logger.info("Task switched to Exploration Mode")
+        send_text_message(client_sock, "Task switched to Exploration Mode", logger)
+    elif command == "beginfastest":
+        current_task = "fastest_path"
+        logger.info("Task switched to Fastest Path Mode")
+        send_text_message(client_sock, "Task switched to Fastest Path Mode", logger)
+    else:
+        logger.warning(f"Unknown CMD command: {command}")
+        send_text_message(client_sock, f"ERROR: Unknown command '{command}'", logger)
 
 
 def send_image_file(client_sock, file_path, logger):
@@ -165,16 +177,14 @@ def send_image_file(client_sock, file_path, logger):
         return
     try:
         file_size = os.path.getsize(file_path)
-        header = json.dumps(
-            {"filename": os.path.basename(file_path), "filesize": file_size}
-        )
+        header = json.dumps({"filename": os.path.basename(file_path), "filesize": file_size})
         client_sock.send(header.encode("utf-8"))
         time.sleep(0.2)
+
         with open(file_path, "rb") as f:
-            chunk = f.read(1024)
-            while chunk:
+            while chunk := f.read(1024):
                 client_sock.send(chunk)
-                chunk = f.read(1024)
+
         logger.info(f"Sent image: {file_path} ({file_size} bytes)")
     except Exception as e:
         logger.error(f"Error sending image: {e}")
@@ -190,3 +200,4 @@ def send_text_message(client_sock, message, logger):
 
 if __name__ == "__main__":
     start_bluetooth_service()
+
