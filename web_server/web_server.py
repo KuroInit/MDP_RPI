@@ -36,24 +36,22 @@ logger.add(
     level="INFO",
 )
 
-
-### 📌 System Information Functions ###
+#some sys resource analysis
 def get_system_info():
     """Retrieve system resource usage and temperature."""
     cpu_usage = psutil.cpu_percent(interval=1)
     memory = psutil.virtual_memory()
-    memory_used = memory.used / (1024**2)  # Convert bytes to MB
+    memory_used = memory.used / (1024**2)
     memory_total = memory.total / (1024**2)
     memory_percent = memory.percent
     uptime_seconds = time.time() - psutil.boot_time()
     uptime = time.strftime("%H:%M:%S", time.gmtime(uptime_seconds))
 
-    # Get CPU Temperature (Only works on Raspberry Pi)
     try:
         with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
             temp = int(f.read().strip()) / 1000.0
     except FileNotFoundError:
-        temp = None  # Temperature not available
+        temp = None  # temp not available
 
     return {
         "cpu_usage": cpu_usage,
@@ -65,7 +63,6 @@ def get_system_info():
     }
 
 
-### 📌 New API Endpoints ###
 @app.get("/wifi")
 async def wifi_status():
     """Returns the current WiFi status of the Raspberry Pi."""
@@ -103,7 +100,6 @@ async def system_info():
     return get_system_info()
 
 
-### 📌 Existing Code - Unchanged ###
 class PathFindingRequest(BaseModel):
     obstacles: list
     retrying: bool

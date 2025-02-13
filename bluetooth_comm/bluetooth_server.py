@@ -205,6 +205,7 @@ def handle_cmd(parts, logger, client_sock):
         send_obstacle_data(logger)
     elif command == "beginExplore":
         logger.info("Task switched to Exploration Mode")
+        send_obstacle_data(logger)
         send_text_message(client_sock, "Task switched to Exploration Mode", logger)
     elif command == "beginFastest":
         logger.info("Task switched to Fastest Path Mode")
