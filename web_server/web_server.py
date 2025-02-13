@@ -5,16 +5,13 @@ import psutil
 from fastapi import FastAPI, Request, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from loguru import logger
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from web_server.utils.pathFinder import PathFinder
 from web_server.utils.helper import commandGenerator
+from config.logging_config import loggers  # Import Loguru config
 
-# Initialize FastAPI app
 app = FastAPI()
-
-# Setup CORS for API access
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,20 +20,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Setup Jinja2 for HTML templates
 templates = Jinja2Templates(directory="web_server/templates")
 
-# Logging setup
-LOG_DIR = "logs"
-os.makedirs(LOG_DIR, exist_ok=True)
-logger.add(
-    os.path.join(LOG_DIR, "web_server.log"),
-    rotation="5MB",
-    retention="10 days",
-    level="INFO",
-)
+logger = loggers["webserver"]
 
-#some sys resource analysis
+
+# System resource analysis
 def get_system_info():
     """Retrieve system resource usage and temperature."""
     cpu_usage = psutil.cpu_percent(interval=1)
@@ -51,7 +40,7 @@ def get_system_info():
         with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
             temp = int(f.read().strip()) / 1000.0
     except FileNotFoundError:
-        temp = None  # temp not available
+        temp = None  # Temp not available
 
     return {
         "cpu_usage": cpu_usage,
@@ -132,7 +121,6 @@ async def pathFinding(request: PathFindingRequest):
     robot_x, robot_y = content["robot_x"], content["robot_y"]
     robot_direction = int(content["robot_dir"])
 
-    # Initialize PathFinder
     maze_solver = PathFinder(20, 20, robot_x, robot_y, robot_direction, big_turn=None)
 
     # Add obstacles
