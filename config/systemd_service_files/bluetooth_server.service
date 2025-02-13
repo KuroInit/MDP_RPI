@@ -1,0 +1,16 @@
+[Unit]
+Description=Bluetooth Server Service
+After=network.target bluetooth.service bluetooth_sdp_fix.service
+Requires=bluetooth.service bluetooth_sdp_fix.service
+
+[Service]
+User=mdp23
+Group=mdp23
+WorkingDirectory=/home/mdp23/MDP_RPI
+ExecStart=/home/mdp23/MDP_RPI/.venv/bin/python bluetooth_comm/bluetooth_server.py
+Environment="PYTHONPATH=/home/mdp23/MDP_RPI"
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

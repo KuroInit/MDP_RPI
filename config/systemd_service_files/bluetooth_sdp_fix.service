@@ -1,0 +1,11 @@
+[Unit]
+Description=Fix SDP socket permissions for non-root Bluetooth service
+After=bluetooth.service
+Requires=bluetooth.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c 'chmod o+rw /var/run/sdp'
+
+[Install]
+WantedBy=multi-user.target
