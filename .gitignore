@@ -1,3 +1,4 @@
 .venv/
 logs/
-__pycache__/
+bluetooth_comm/__pycache__/
+web_server/__pycache__/
