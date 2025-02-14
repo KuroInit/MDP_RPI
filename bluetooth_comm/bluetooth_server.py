@@ -200,14 +200,14 @@ def handle_cmd(parts, logger, client_sock):
         return
 
     command = parts[1].strip().lower()
-    if command == "sendArena":
+    if command == "sendarena":
         logger.info("Sending map data to Algorithm Server.")
         send_obstacle_data(logger)
-    elif command == "beginExplore":
+    elif command == "beginexplore":
         logger.info("Task switched to Exploration Mode")
         send_obstacle_data(logger)
         send_text_message(client_sock, "Task switched to Exploration Mode", logger)
-    elif command == "beginFastest":
+    elif command == "beginfastest":
         logger.info("Task switched to Fastest Path Mode")
         send_text_message(client_sock, "Task switched to Fastest Path Mode", logger)
     else:
