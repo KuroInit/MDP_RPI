@@ -1,4 +1,5 @@
 import serial
+import time
 from config.logging_config import loggers
 
 logger = loggers["stm_comm"]
@@ -6,13 +7,15 @@ logger = loggers["stm_comm"]
 
 # TODO: work with stm team to fix convertion factor if needed.
 def init_serial(port="/dev/ttyS0", baudrate=115200, timeout=1):
-    try:
-        ser = serial.Serial(port, baudrate, timeout=timeout)
-        logger.info("Serial port initialized.")
-        return ser
-    except Exception as e:
-        logger.error(f"Error initializing serial port: {e}")
-        return None
+    while True:
+        try:
+            ser = serial.Serial(port, baudrate, timeout=timeout)
+            logger.info("Serial port initialized.")
+            return ser
+        except Exception as e:
+            logger.error(f"Error initializing serial port: {e}")
+            logger.info("Retrying in 10 seconds...")
+            time.sleep(10)
 
 
 def send_command(ser, command):
