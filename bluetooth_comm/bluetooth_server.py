@@ -1,6 +1,7 @@
 import bluetooth
 import os
 import sys
+import json
 import requests
 from config.logging_config import loggers
 
@@ -14,9 +15,9 @@ ALGO_API_URL = "http://localhost:8000/path"
 
 obstacles_list = []
 robot_position = {"x": 1, "y": 1, "dir": 0}
+direction_map = {"NORTH": 0, "EAST": 2, "SOUTH": 4, "WEST": 6}
 
 
-# bluetooth init
 def start_bluetooth_service():
     logger = loggers["bluetooth"]
     server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
@@ -47,7 +48,6 @@ def start_bluetooth_service():
         logger.info("Bluetooth server socket closed.")
 
 
-# Handle client session
 def handle_client_session(client_sock, logger):
     while True:
         try:
@@ -64,7 +64,6 @@ def handle_client_session(client_sock, logger):
     client_sock.close()
 
 
-# message type handling
 def process_message(message_str, client_sock, logger):
     parts = message_str.split(",")
     if not parts:
@@ -90,15 +89,19 @@ def process_message(message_str, client_sock, logger):
         logger.warning(f"Unknown message type: {msg_type}")
 
 
-# handle robot positione
 def handle_robot(parts, logger):
     global robot_position
     if len(parts) < 4:
         logger.error("ROBOT message missing parameters.")
         return
-    x, y, direction = int(parts[1]), int(parts[2]), parts[3].upper()
+    try:
+        x = int(parts[1])
+        y = int(parts[2])
+    except ValueError:
+        logger.error("Invalid coordinates in ROBOT message.")
+        return
 
-    direction_map = {"NORTH": 0, "EAST": 2, "SOUTH": 4, "WEST": 6}
+    direction = parts[3].upper()
     if direction not in direction_map:
         logger.error(f"Invalid robot direction: {direction}")
         return
@@ -107,35 +110,52 @@ def handle_robot(parts, logger):
     logger.info(f"Robot position updated: {robot_position}")
 
 
-# handle obstacle data
 def handle_obstacle(parts, logger):
     global obstacles_list
     if len(parts) < 4:
         logger.error("OBSTACLE message missing parameters.")
         return
+    try:
+        x = int(parts[1])
+        y = int(parts[2])
+        obstacle_id = int(parts[3])
+    except ValueError:
+        logger.error("Invalid obstacle parameters.")
+        return
 
-    x, y, obstacle_id = int(parts[1]), int(parts[2]), int(parts[3])
-    facing = parts[4] if len(parts) > 4 else "UNKNOWN"
-
-    direction_map = {"NORTH": 0, "EAST": 2, "SOUTH": 4, "WEST": 6}
+    facing = parts[4].upper() if len(parts) > 4 else "UNKNOWN"
     direction = direction_map.get(facing, 4)
 
     obstacle = {"x": x, "y": y, "id": obstacle_id, "d": direction}
     obstacles_list.append(obstacle)
-
     logger.info(f"Obstacle recorded: {obstacle}")
 
 
-# handle target updates
+def parse_obstacle_json(obstacle_data, logger):
+    required_fields = ["x", "y", "id", "d"]
+    if not all(field in obstacle_data for field in required_fields):
+        logger.error("OBSTACLE JSON missing required fields.")
+        return None
+    d_val = obstacle_data["d"]
+    if isinstance(d_val, str):
+        d_val = direction_map.get(d_val.upper(), 4)
+    return {
+        "x": obstacle_data["x"],
+        "y": obstacle_data["y"],
+        "id": obstacle_data["id"],
+        "d": d_val,
+    }
+
+
 def handle_target(parts, logger):
     if len(parts) < 3:
         logger.error("TARGET message missing parameters.")
         return
-    obstacle_number, target_id = parts[1], parts[2]
+    obstacle_number = parts[1]
+    target_id = parts[2]
     logger.info(f"Target identified: obstacle {obstacle_number}, id {target_id}")
 
 
-# handle robot status update
 def handle_status(parts, logger):
     if len(parts) < 2:
         logger.error("STATUS message missing parameters.")
@@ -144,16 +164,15 @@ def handle_status(parts, logger):
     logger.info(f"Status update: {status}")
 
 
-# Handle target face updates
 def handle_face(parts, logger):
     if len(parts) < 3:
         logger.error("FACE message missing parameters.")
         return
-    obstacle_number, side = parts[1], parts[2]
+    obstacle_number = parts[1]
+    side = parts[2]
     logger.info(f"Face update: obstacle {obstacle_number}, side {side}")
 
 
-# Handle robot movement commands
 def handle_move(parts, logger):
     if len(parts) < 2:
         logger.error("MOVE message missing parameters.")
@@ -162,9 +181,7 @@ def handle_move(parts, logger):
     logger.info(f"Movement command: {direction}")
 
 
-# sending final map
 def send_obstacle_data(logger):
-    """Sends all received obstacle data to the Algorithm Server"""
     if not obstacles_list:
         logger.warning("No obstacles recorded yet.")
         return
@@ -193,16 +210,33 @@ def send_obstacle_data(logger):
         logger.error(f"Error sending map data to Algorithm Server: {e}")
 
 
-# Send CMD responses
 def handle_cmd(parts, logger, client_sock):
+    global obstacles_list
     if len(parts) < 2:
         logger.error("CMD message missing parameters.")
         return
 
     command = parts[1].strip().lower()
     if command == "sendarena":
-        logger.info("Sending map data to Algorithm Server.")
-        send_obstacle_data(logger)
+        if len(parts) < 3:
+            logger.error("CMD,sendArena missing JSON data.")
+            return
+        try:
+            arena_data = json.loads(parts[2])
+            robot_position["x"] = arena_data.get("robot_x", robot_position["x"])
+            robot_position["y"] = arena_data.get("robot_y", robot_position["y"])
+
+            parsed_obstacles = []
+            for obs in arena_data.get("obstacles", []):
+                parsed = parse_obstacle_json(obs, logger)
+                if parsed is not None:
+                    parsed_obstacles.append(parsed)
+            obstacles_list = parsed_obstacles
+
+            send_obstacle_data(logger)
+
+        except json.JSONDecodeError:
+            logger.error("Parsing error for sendArena JSON data.")
     elif command == "beginexplore":
         logger.info("Task switched to Exploration Mode")
         send_obstacle_data(logger)
@@ -214,7 +248,6 @@ def handle_cmd(parts, logger, client_sock):
         logger.warning(f"Unknown CMD command: {command}")
 
 
-# Send a text message to the client
 def send_text_message(client_sock, message, logger):
     try:
         client_sock.send(message.encode("utf-8"))
@@ -223,6 +256,5 @@ def send_text_message(client_sock, message, logger):
         logger.error(f"Error sending text: {e}")
 
 
-# Start the Bluetooth service
 if __name__ == "__main__":
     start_bluetooth_service()
