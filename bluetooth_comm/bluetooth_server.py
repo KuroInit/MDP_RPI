@@ -223,9 +223,19 @@ def handle_cmd(parts, logger, client_sock):
             return
         try:
             arena_data = json.loads(parts[2])
+            # Update robot position
             robot_position["x"] = arena_data.get("robot_x", robot_position["x"])
             robot_position["y"] = arena_data.get("robot_y", robot_position["y"])
+            # Update robot direction using robot_dir field
+            robot_dir_str = arena_data.get("robot_dir")
+            if robot_dir_str and robot_dir_str.upper() in direction_map:
+                robot_position["dir"] = direction_map[robot_dir_str.upper()]
+            else:
+                logger.warning(
+                    "Invalid or missing robot_dir; keeping previous direction."
+                )
 
+            # Parse obstacles from JSON and update the global obstacles_list
             parsed_obstacles = []
             for obs in arena_data.get("obstacles", []):
                 parsed = parse_obstacle_json(obs, logger)
