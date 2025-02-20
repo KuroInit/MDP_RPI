@@ -153,6 +153,37 @@ async def pathFinding(request: PathFindingRequest):
         "error": None,
     }
 
+# @app.post("/image")
+# async def predictImage(file: UploadFile = File(...)):
+#     """
+#     Main endpoint for running image prediction model and saving it.
+#     :return: a json object with a key "result" and a dictionary with keys "obstacle_id" and "image_id"
+#     """
+#     filename = file.filename
+#     file_location = os.path.join('uploads', filename)
+
+#     # save the file
+#     with open(file_location, "wb") as buffer:
+#         buffer.write(await file.read())
+    
+#     # MAY NEED TO CHANGE DEPENDING ON FILE NAME AFTER RPI SCREENSHOT
+#     constituents = filename.split("_")
+#     obstacle_id = constituents[1]
+
+#     image_id = predictImage(filename)
+
+#     return {
+#         "obstacle_id": obstacle_id,
+#         "image_id": image_id
+#         }
+
+# @app.get("/stitch")
+# async def stitch():
+#     img = stitchImage()
+#     img.show()
+#     return {"result": "ok"}
+
+
 
 if __name__ == "__main__":
     import uvicorn
