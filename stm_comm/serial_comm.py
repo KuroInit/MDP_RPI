@@ -6,6 +6,18 @@ logger = loggers["stm_comm"]
 
 
 # TODO: work with stm team to fix convertion factor if needed.
+
+# NOTE: command list
+# RS00 - Gyro Reset - Reset the gyro before starting movement
+# FWxx - Forward - Robot moves forward by xx units
+# FR00 - Forward Right - Robot moves forward right by 3x1 squares
+# FL00 - Forward Left - Robot moves forward left by 3x1 squares
+# BWxx - Backward - Robot moves backward by xx units
+# BR00 - Backward Right - Robot moves backward right by 3x1 squares
+# BL00 - Backward Left - Robot moves backward left by 3x1 squares
+# SNAPX1_X2 - Snapshot - Robot takes a snapshot (X1: Obstacle id, X2: Centre, Left, Right)
+
+
 def init_serial(port="/dev/ttyS0", baudrate=115200, timeout=1):
     while True:
         try:
