@@ -2,4 +2,4 @@
 logs/
 bluetooth_comm/__pycache__/
 web_server/__pycache__/
-.DS_Store
+/.DS_Store
