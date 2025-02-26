@@ -69,9 +69,13 @@ def handle_client_session(client_sock, logger):
             if not data:
                 logger.info("Client closed the connection.")
                 break
+            # Strip leading/trailing whitespace and split on commas,
+            # filtering out empty parts.
             message_str = data.decode("utf-8").strip()
-            logger.info(f"Received: {message_str}")
-            process_message(message_str, client_sock, logger)
+            parts = [p.strip() for p in message_str.split(",") if p.strip()]
+            logger.info(f"Received raw message: '{message_str}'")
+            logger.info(f"Parsed message parts: {parts}")
+            process_message(parts, client_sock, logger)
         except Exception as e:
             logger.error(f"Error in client communication: {e}")
             break
@@ -79,17 +83,21 @@ def handle_client_session(client_sock, logger):
     active_bt_client = None
 
 
-def process_message(message_str, client_sock, logger):
-    # If the message is a CMD message, split into at most 3 parts to preserve JSON data.
-    if message_str.upper().startswith("CMD,"):
-        parts = message_str.split(",", 2)
-    else:
-        parts = message_str.split(",")
+def process_message(parts, client_sock, logger):
     if not parts:
-        logger.warning("Empty message parts.")
+        logger.warning("Empty message parts after splitting.")
         return
 
     msg_type = parts[0].upper()
+    # For CMD messages, if JSON data is included, ensure we preserve it.
+    if msg_type == "CMD" and len(parts) < 3:
+        # Re-split with a max of 3 parts if possible
+        message_str = ",".join(parts)
+        parts = [p.strip() for p in message_str.split(",", 2)]
+    if not parts:
+        logger.warning("Empty message parts after re-splitting CMD message.")
+        return
+
     if msg_type == "ROBOT":
         handle_robot(parts, logger)
     elif msg_type == "TARGET":
@@ -111,7 +119,7 @@ def process_message(message_str, client_sock, logger):
 def handle_robot(parts, logger):
     global robot_position
     if len(parts) < 4:
-        logger.error("ROBOT message missing parameters.")
+        logger.error(f"ROBOT message missing parameters: {parts}")
         return
     try:
         x = int(parts[1])
@@ -132,7 +140,7 @@ def handle_robot(parts, logger):
 def handle_obstacle(parts, logger):
     global obstacles_list
     if len(parts) < 4:
-        logger.error("OBSTACLE message missing parameters.")
+        logger.error(f"OBSTACLE message missing parameters: {parts}")
         return
     try:
         x = int(parts[1])
@@ -142,6 +150,7 @@ def handle_obstacle(parts, logger):
         logger.error("Invalid obstacle parameters.")
         return
 
+    # 'facing' is optional; default to "UNKNOWN" if not provided.
     facing = parts[4].upper() if len(parts) > 4 else "UNKNOWN"
     direction = direction_map.get(facing, 4)
 
@@ -168,7 +177,7 @@ def parse_obstacle_json(obstacle_data, logger):
 
 def handle_target(parts, logger):
     if len(parts) < 3:
-        logger.error("TARGET message missing parameters.")
+        logger.error(f"TARGET message missing parameters: {parts}")
         return
     obstacle_number = parts[1]
     target_id = parts[2]
@@ -177,7 +186,7 @@ def handle_target(parts, logger):
 
 def handle_status(parts, logger):
     if len(parts) < 2:
-        logger.error("STATUS message missing parameters.")
+        logger.error(f"STATUS message missing parameters: {parts}")
         return
     status = parts[1]
     logger.info(f"Status update: {status}")
@@ -185,7 +194,7 @@ def handle_status(parts, logger):
 
 def handle_face(parts, logger):
     if len(parts) < 3:
-        logger.error("FACE message missing parameters.")
+        logger.error(f"FACE message missing parameters: {parts}")
         return
     obstacle_number = parts[1]
     side = parts[2]
@@ -194,10 +203,9 @@ def handle_face(parts, logger):
 
 def handle_move(parts, logger):
     if len(parts) < 2:
-        logger.error("MOVE message missing parameters.")
+        logger.error(f"MOVE message missing parameters: {parts}")
         return
     direction = parts[1].strip().lower()
-    # Allowed movement commands: "f", "r", "fl", "fr", "bl", "br"
     allowed_moves = {"f", "r", "fl", "fr", "bl", "br"}
     if direction not in allowed_moves:
         logger.error(f"Invalid MOVE direction: {direction}")
