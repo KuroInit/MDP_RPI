@@ -193,19 +193,20 @@ async def send_stm_command(stm_command: STMCommandRequest):
     return {"stm_response": response}
 
 
-def dummy_snap_handler(command: str):
+def snap_handler(command: str):
     """
-    Dummy handler for SNAP commands.
-    In a real implementation, this would trigger the camera and process the image.
-    For now, it just logs the command.
+    Snap handler for SNAP commands.
+    Extracts the numeric part (if any) and logs the snap command.
     """
-    logger.info(f"Dummy SNAP handler invoked for command: {command}")
+    # Extract the number after "SNAP" (assume command is like "SNAP1" or "SNAP 1")
+    num = command[4:].strip()
+    logger.info(f"Snap command received: {num}")
 
 
 def run_task1(result: dict):
     """
     Processes the algorithm result by iterating over the command list.
-    Commands containing "SNAP" are handled by a dummy function.
+    Commands containing "SNAP" are handled by the snap handler.
     All other commands are sent to the STM service via IPC.
     This function runs as a background task.
     """
@@ -215,8 +216,8 @@ def run_task1(result: dict):
         return
 
     for command in commands:
-        if "SNAP" in command:
-            dummy_snap_handler(command)
+        if command.upper().startswith("SNAP"):
+            snap_handler(command)
         else:
             try:
                 response = send_command_to_stm(command)
