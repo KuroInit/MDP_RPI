@@ -22,6 +22,7 @@ direction_map = {"NORTH": 0, "EAST": 2, "SOUTH": 4, "WEST": 6}
 
 # Global variable to store the currently connected Bluetooth client socket
 active_bt_client = None
+STM_SOCKET_PATH = "/tmp/stm_ipc.sock"
 
 
 def start_bluetooth_service():
@@ -203,16 +204,26 @@ def handle_face(parts, logger):
     logger.info(f"Face update: obstacle {obstacle_number}, side {side}")
 
 
+def send_to_stm(letter: str, socket_path: str = STM_SOCKET_PATH):
+    try:
+        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client.connect(socket_path)
+        client.send((letter + "\n").encode("utf-8"))
+    except Exception as e:
+        client.close()
+
+
 def handle_move(parts, logger):
     if len(parts) < 2:
         logger.error(f"MOVE message missing parameters: {parts}")
         return
-    direction = parts[1].strip().lower()
-    allowed_moves = {"f", "r", "fl", "fr", "bl", "br"}
-    if direction not in allowed_moves:
-        logger.error(f"Invalid MOVE direction: {direction}")
-        return
-    logger.info(f"Movement command: {direction}")
+    # Extract the letter from the MOVE command.
+    letter = parts[1].strip()
+    logger.info(f"Received MOVE command, sending letter: {letter} to STM")
+    try:
+        send_to_stm(letter)
+    except Exception as e:
+        logger.error(f"movement command to STM error")
 
 
 def send_obstacle_data(logger):

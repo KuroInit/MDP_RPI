@@ -42,7 +42,7 @@ def notify_bluetooth(command: str):
 def send_command(ser, command):
     try:
         ser.write((command + "\n").encode("utf-8"))
-        logger.info(f"Sent command: {command}")
+        logger.info(f"SERIAL: Sent command: {command}")
         # Notify the Bluetooth service every time a command is sent
         notify_bluetooth(command)
     except Exception as e:
@@ -64,7 +64,7 @@ def send_path(ser, path):
 def read_response(ser):
     try:
         response = ser.readline().decode("utf-8").strip()
-        logger.info(f"Received response: {response}")
+        logger.info(f"SERIAL: Received response: {response}")
         return response
     except Exception as e:
         logger.error(f"Error reading response: {e}")
