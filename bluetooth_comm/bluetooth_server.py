@@ -2,6 +2,8 @@ import bluetooth
 import os
 import sys
 import json
+import socket
+import threading
 import requests
 from config.logging_config import loggers
 
@@ -18,9 +20,16 @@ obstacles_list = []
 robot_position = {"x": 1, "y": 1, "dir": 0}
 direction_map = {"NORTH": 0, "EAST": 2, "SOUTH": 4, "WEST": 6}
 
+# Global variable to store the currently connected Bluetooth client socket
+active_bt_client = None
+
 
 def start_bluetooth_service():
     logger = loggers["bluetooth"]
+    # Start the Bluetooth IPC listener in a separate thread
+    bt_ipc_thread = threading.Thread(target=start_bt_ipc_listener, daemon=True)
+    bt_ipc_thread.start()
+
     # Create a Bluetooth socket using RFCOMM
     server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
     server_sock.bind(("", bluetooth.PORT_ANY))
@@ -52,6 +61,8 @@ def start_bluetooth_service():
 
 
 def handle_client_session(client_sock, logger):
+    global active_bt_client
+    active_bt_client = client_sock
     while True:
         try:
             data = client_sock.recv(1024)
@@ -65,6 +76,7 @@ def handle_client_session(client_sock, logger):
             logger.error(f"Error in client communication: {e}")
             break
     client_sock.close()
+    active_bt_client = None
 
 
 def process_message(message_str, client_sock, logger):
@@ -267,6 +279,45 @@ def send_text_message(client_sock, message, logger):
         logger.info(f"Sent text: {message}")
     except Exception as e:
         logger.error(f"Error sending text: {e}")
+
+
+def start_bt_ipc_listener():
+    """
+    Starts a Unix Domain Socket listener for receiving notifications from the STM service.
+    When a notification is received, it is forwarded to the currently connected Bluetooth client.
+    """
+    logger = loggers["bluetooth"]
+    bt_socket_path = "/tmp/bt_ipc.sock"
+    if os.path.exists(bt_socket_path):
+        os.remove(bt_socket_path)
+    ipc_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    ipc_sock.bind(bt_socket_path)
+    ipc_sock.listen(5)
+    logger.info("Bluetooth IPC listener started on " + bt_socket_path)
+
+    while True:
+        conn, _ = ipc_sock.accept()
+        try:
+            data = conn.recv(1024)
+            if data:
+                notification = data.decode("utf-8").strip()
+                logger.info("Received notification via IPC: " + notification)
+                # Forward the notification to the active Bluetooth client, if connected
+                global active_bt_client
+                if active_bt_client:
+                    try:
+                        active_bt_client.send(notification.encode("utf-8"))
+                        logger.info("Forwarded notification to Bluetooth client.")
+                    except Exception as e:
+                        logger.error(f"Error sending notification to BT client: {e}")
+                else:
+                    logger.warning(
+                        "No active Bluetooth client to forward notification."
+                    )
+        except Exception as e:
+            logger.error("Error handling BT IPC connection: " + str(e))
+        finally:
+            conn.close()
 
 
 if __name__ == "__main__":
