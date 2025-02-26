@@ -113,7 +113,7 @@ async def status():
 
 
 @app.post("/path")
-async def pathFinding(request: PathFindingRequest):
+async def pathFinding(request: PathFindingRequest, background_tasks: BackgroundTasks):
     """Main endpoint for the path finding algorithm."""
     content = request.model_dump()
 
@@ -151,10 +151,13 @@ async def pathFinding(request: PathFindingRequest):
             i += 1
         path_results.append(optimal_path[i].get_dict())
 
-    return {
+    result = {
         "data": {"distance": distance, "path": path_results, "commands": commands},
         "error": None,
     }
+    # Automatically forward the result to run_task1 as a background task.
+    background_tasks.add_task(run_task1, result)
+    return result
 
 
 # Define a Pydantic model for STM commands
@@ -190,17 +193,6 @@ async def send_stm_command(stm_command: STMCommandRequest):
     return {"stm_response": response}
 
 
-# --- New Endpoint: /runTask1 ---
-# This endpoint accepts the full algorithm result (same structure as /path response)
-# and iterates through its command list. If a command contains "SNAP", it calls
-# a dummy function. Otherwise, it sends the command to the STM service.
-
-
-class AlgorithmResult(BaseModel):
-    data: dict
-    error: str | None = None  # Optional error field
-
-
 def dummy_snap_handler(command: str):
     """
     Dummy handler for SNAP commands.
@@ -210,19 +202,17 @@ def dummy_snap_handler(command: str):
     logger.info(f"Dummy SNAP handler invoked for command: {command}")
 
 
-@app.post("/runTask1")
-async def run_task1(result: AlgorithmResult):
+def run_task1(result: dict):
     """
-    Endpoint to execute the robot's movement commands.
-    It processes the algorithm result by iterating over the command list.
+    Processes the algorithm result by iterating over the command list.
     Commands containing "SNAP" are handled by a dummy function.
     All other commands are sent to the STM service via IPC.
+    This function runs as a background task.
     """
-    commands = result.data.get("commands", [])
+    commands = result.get("data", {}).get("commands", [])
     if not commands:
-        raise HTTPException(
-            status_code=400, detail="No commands found in algorithm result."
-        )
+        logger.error("No commands found in algorithm result.")
+        return
 
     for command in commands:
         if "SNAP" in command:
@@ -235,8 +225,7 @@ async def run_task1(result: AlgorithmResult):
                 logger.error(f"Error sending command {command}: {e}")
         # Delay between commands; adjust as needed based on robot response time
         time.sleep(1)
-
-    return {"status": "Task1 execution complete"}
+    logger.info("Task1 execution complete")
 
 
 # Uncomment or update these endpoints as needed.
