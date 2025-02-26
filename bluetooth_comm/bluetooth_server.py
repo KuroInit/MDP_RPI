@@ -80,7 +80,7 @@ def handle_client_session(client_sock, logger):
 
 
 def process_message(message_str, client_sock, logger):
-    parts = message_str.split(",", 2)
+    parts = message_str.split(",")
     if not parts:
         logger.warning("Empty message parts.")
         return

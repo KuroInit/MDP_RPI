@@ -19,27 +19,6 @@ def init_serial(port="/dev/ttyUSB0", baudrate=115200, timeout=1):
             time.sleep(10)
 
 
-import os
-import socket
-import serial
-import time
-from config.logging_config import loggers
-
-logger = loggers["stm_comm"]
-
-
-def init_serial(port="/dev/ttyUSB0", baudrate=115200, timeout=1):
-    while True:
-        try:
-            ser = serial.Serial(port, baudrate, timeout=timeout)
-            logger.info("Serial port initialized.")
-            return ser
-        except Exception as e:
-            logger.error(f"Error initializing serial port: {e}")
-            logger.info("Retrying in 10 seconds...")
-            time.sleep(10)
-
-
 def notify_bluetooth(command: str):
     bt_socket_path = "/tmp/bt_ipc.sock"
     prefix = command[:2].upper()
