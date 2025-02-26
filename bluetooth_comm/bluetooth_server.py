@@ -93,7 +93,8 @@ def process_message(parts, client_sock, logger):
     if msg_type == "CMD" and len(parts) < 3:
         # Re-split with a max of 3 parts if possible
         message_str = ",".join(parts)
-        parts = [p.strip() for p in message_str.split(",", 2)]
+        parts = [p.strip() for p in message_str.split(",") if p.strip()]
+
     if not parts:
         logger.warning("Empty message parts after re-splitting CMD message.")
         return
