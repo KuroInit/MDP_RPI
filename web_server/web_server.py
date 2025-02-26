@@ -11,6 +11,8 @@ from pydantic import BaseModel
 from web_server.utils.pathFinder import PathFinder
 from web_server.utils.helper import commandGenerator
 from config.logging_config import loggers  # Import Loguru config
+from web_server.utils.imageRec import loadModel, predictImage
+import cv2
 
 app = FastAPI()
 app.add_middleware(
@@ -198,9 +200,37 @@ def snap_handler(command: str):
     Snap handler for SNAP commands.
     Extracts the numeric part (if any) and logs the snap command.
     """
-    # Extract the number after "SNAP" (assume command is like "SNAP1" or "SNAP 1")
+    # Extract the number after "SNAP" (if any)
     num = command[4:].strip()
-    logger.info(f"Snap command received: {num}")
+    loggers.info(f"Snap command received: {num}")
+    
+    # Initialize camera
+    cam = cv2.VideoCapture(0)
+    if not cam.isOpened():
+        loggers.error("Could not access the camera.")
+        return
+    
+    ret, frame = cam.read()
+    cam.release()
+    
+    if not ret:
+        loggers.error("Failed to capture image.")
+        return
+    
+    # Save the captured image
+    img_name = f"snap_{int(time.time())}.jpg"
+    img_path = os.path.join("uploads", img_name)
+    cv2.imwrite(img_path, frame)
+    loggers.info(f"Image saved: {img_path}")
+    
+    # Load the ONNX model
+    session = loadModel()
+    
+    # Run inference
+    result = predictImage(img_name, session)
+    loggers.info(f"Inference result: {result}")
+    
+    return result
 
 
 def run_task1(result: dict):
