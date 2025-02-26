@@ -13,6 +13,8 @@ from web_server.utils.helper import commandGenerator
 from config.logging_config import loggers  # Import Loguru config
 from web_server.utils.imageRec import loadModel, predictImage
 import cv2
+from picamera import PiCamera
+from picamera.array import PiRGBArray
 
 app = FastAPI()
 app.add_middleware(
@@ -204,24 +206,16 @@ def snap_handler(command: str):
     num = command[4:].strip()
     loggers.info(f"Snap command received: {num}")
     
-    # Initialize camera
-    cam = cv2.VideoCapture(0)
-    if not cam.isOpened():
-        loggers.error("Could not access the camera.")
+    try:
+        camera = PiCamera()
+        img_name = f"snap_{int(time.time())}.jpg"
+        img_path = os.path.join("uploads", img_name)
+        camera.capture(img_path)
+        camera.close()
+        loggers.info(f"Image saved: {img_path}")
+    except Exception as e:
+        loggers.error(f"Failed to capture image: {e}")
         return
-    
-    ret, frame = cam.read()
-    cam.release()
-    
-    if not ret:
-        loggers.error("Failed to capture image.")
-        return
-    
-    # Save the captured image
-    img_name = f"snap_{int(time.time())}.jpg"
-    img_path = os.path.join("uploads", img_name)
-    cv2.imwrite(img_path, frame)
-    loggers.info(f"Image saved: {img_path}")
     
     # Load the ONNX model
     session = loadModel()
