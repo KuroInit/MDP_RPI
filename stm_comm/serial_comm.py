@@ -1,3 +1,5 @@
+import os
+import socket
 import serial
 import time
 from config.logging_config import loggers
@@ -5,24 +7,7 @@ from config.logging_config import loggers
 logger = loggers["stm_comm"]
 
 
-# TODO: work with stm team to fix convertion factor if needed.
-<<<<<<< Updated upstream
-
-# NOTE: command list
-# RS00 - Gyro Reset - Reset the gyro before starting movement
-# FWxx - Forward - Robot moves forward by xx units
-# FR00 - Forward Right - Robot moves forward right by 3x1 squares
-# FL00 - Forward Left - Robot moves forward left by 3x1 squares
-# BWxx - Backward - Robot moves backward by xx units
-# BR00 - Backward Right - Robot moves backward right by 3x1 squares
-# BL00 - Backward Left - Robot moves backward left by 3x1 squares
-# SNAPX1_X2 - Snapshot - Robot takes a snapshot (X1: Obstacle id, X2: Centre, Left, Right)
-
-
-def init_serial(port="/dev/ttyS0", baudrate=115200, timeout=1):
-=======
 def init_serial(port="/dev/ttyUSB0", baudrate=115200, timeout=1):
->>>>>>> Stashed changes
     while True:
         try:
             ser = serial.Serial(port, baudrate, timeout=timeout)
@@ -64,11 +49,40 @@ def read_response(ser):
         return None
 
 
+def start_ipc_server(ser, socket_path="/tmp/stm_ipc.sock"):
+    # Remove the existing socket file if it exists.
+    if os.path.exists(socket_path):
+        os.remove(socket_path)
+    server_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    server_sock.bind(socket_path)
+    server_sock.listen(5)
+    logger.info("STM IPC server listening on " + socket_path)
+
+    while True:
+        conn, _ = server_sock.accept()
+        try:
+            data = conn.recv(1024)
+            if data:
+                command = data.decode("utf-8").strip()
+                logger.info("Received command via IPC: " + command)
+                # Process the command by sending it over the serial interface
+                send_command(ser, command)
+                # Optionally, read and log a response from STM
+                response = read_response(ser)
+                conn.send(
+                    ("OK: " + (response if response else "No response")).encode("utf-8")
+                )
+            else:
+                logger.warning("No data received on IPC connection.")
+        except Exception as e:
+            logger.error("Error handling IPC connection: " + str(e))
+        finally:
+            conn.close()
+
+
 if __name__ == "__main__":
     ser = init_serial()
     if ser:
-        send_command(ser, "B")
-        print("Response:", read_response(ser))
-        send_command(ser, "S")
-        print("Response:", read_response(ser))
+        # Start the IPC server to listen for commands from other services
+        start_ipc_server(ser)
         ser.close()

@@ -2,7 +2,8 @@ import time
 import os
 import subprocess
 import psutil
-from fastapi import FastAPI, Request, HTTPException, UploadFile, File
+import socket
+from fastapi import FastAPI, Request, HTTPException, BackgroundTasks, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -21,8 +22,10 @@ app.add_middleware(
 )
 
 templates = Jinja2Templates(directory="web_server/templates")
-
 logger = loggers["webserver"]
+
+# Define the socket path used for IPC with the STM service
+STM_SOCKET_PATH = "/tmp/stm_ipc.sock"
 
 
 # System resource analysis
@@ -153,6 +156,90 @@ async def pathFinding(request: PathFindingRequest):
         "error": None,
     }
 
+
+# Define a Pydantic model for STM commands
+class STMCommandRequest(BaseModel):
+    command: str
+
+
+def send_command_to_stm(command: str, socket_path: str = STM_SOCKET_PATH) -> str:
+    """
+    Connects to the STM IPC server via a Unix Domain Socket,
+    sends the given command, and returns the response.
+    """
+    client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    try:
+        client.connect(socket_path)
+        client.send((command + "\n").encode("utf-8"))
+        response = client.recv(1024)
+        return response.decode("utf-8")
+    except Exception as e:
+        logger.error(f"Error communicating with STM: {e}")
+        raise HTTPException(status_code=500, detail=f"STM communication error: {e}")
+    finally:
+        client.close()
+
+
+@app.post("/send-stm-command")
+async def send_stm_command(stm_command: STMCommandRequest):
+    """
+    Endpoint to send a command to the STM service via IPC.
+    The command is forwarded to the STM service, which then processes it.
+    """
+    response = send_command_to_stm(stm_command.command)
+    return {"stm_response": response}
+
+
+# --- New Endpoint: /runTask1 ---
+# This endpoint accepts the full algorithm result (same structure as /path response)
+# and iterates through its command list. If a command contains "SNAP", it calls
+# a dummy function. Otherwise, it sends the command to the STM service.
+
+
+class AlgorithmResult(BaseModel):
+    data: dict
+    error: str | None = None  # Optional error field
+
+
+def dummy_snap_handler(command: str):
+    """
+    Dummy handler for SNAP commands.
+    In a real implementation, this would trigger the camera and process the image.
+    For now, it just logs the command.
+    """
+    logger.info(f"Dummy SNAP handler invoked for command: {command}")
+
+
+@app.post("/runTask1")
+async def run_task1(result: AlgorithmResult):
+    """
+    Endpoint to execute the robot's movement commands.
+    It processes the algorithm result by iterating over the command list.
+    Commands containing "SNAP" are handled by a dummy function.
+    All other commands are sent to the STM service via IPC.
+    """
+    commands = result.data.get("commands", [])
+    if not commands:
+        raise HTTPException(
+            status_code=400, detail="No commands found in algorithm result."
+        )
+
+    for command in commands:
+        if "SNAP" in command:
+            dummy_snap_handler(command)
+        else:
+            try:
+                response = send_command_to_stm(command)
+                logger.info(f"Sent command: {command}, STM response: {response}")
+            except Exception as e:
+                logger.error(f"Error sending command {command}: {e}")
+        # Delay between commands; adjust as needed based on robot response time
+        time.sleep(1)
+
+    return {"status": "Task1 execution complete"}
+
+
+# Uncomment or update these endpoints as needed.
 # @app.post("/image")
 # async def predictImage(file: UploadFile = File(...)):
 #     """
@@ -161,29 +248,27 @@ async def pathFinding(request: PathFindingRequest):
 #     """
 #     filename = file.filename
 #     file_location = os.path.join('uploads', filename)
-
+#
 #     # save the file
 #     with open(file_location, "wb") as buffer:
 #         buffer.write(await file.read())
-    
+#
 #     # MAY NEED TO CHANGE DEPENDING ON FILE NAME AFTER RPI SCREENSHOT
 #     constituents = filename.split("_")
 #     obstacle_id = constituents[1]
-
+#
 #     image_id = predictImage(filename)
-
+#
 #     return {
 #         "obstacle_id": obstacle_id,
 #         "image_id": image_id
 #         }
-
+#
 # @app.get("/stitch")
 # async def stitch():
 #     img = stitchImage()
 #     img.show()
 #     return {"result": "ok"}
-
-
 
 if __name__ == "__main__":
     import uvicorn

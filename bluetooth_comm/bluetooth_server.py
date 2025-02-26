@@ -10,9 +10,10 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-# Web server
+# Web server endpoint for map data uploads
 ALGO_API_URL = "http://localhost:8000/path"
 
+# Global variables for robot state and obstacles list
 obstacles_list = []
 robot_position = {"x": 1, "y": 1, "dir": 0}
 direction_map = {"NORTH": 0, "EAST": 2, "SOUTH": 4, "WEST": 6}
@@ -20,12 +21,14 @@ direction_map = {"NORTH": 0, "EAST": 2, "SOUTH": 4, "WEST": 6}
 
 def start_bluetooth_service():
     logger = loggers["bluetooth"]
+    # Create a Bluetooth socket using RFCOMM
     server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
     server_sock.bind(("", bluetooth.PORT_ANY))
     server_sock.listen(1)
     port = server_sock.getsockname()[1]
     logger.info(f"Bluetooth listening on RFCOMM port {port}")
 
+    # Advertise the service so that clients can discover it
     bluetooth.advertise_service(
         server_sock,
         "RobotProjectBTService",
