@@ -80,7 +80,11 @@ def handle_client_session(client_sock, logger):
 
 
 def process_message(message_str, client_sock, logger):
-    parts = message_str.split(",")
+    # If the message is a CMD message, split into at most 3 parts to preserve JSON data.
+    if message_str.upper().startswith("CMD,"):
+        parts = message_str.split(",", 2)
+    else:
+        parts = message_str.split(",")
     if not parts:
         logger.warning("Empty message parts.")
         return
@@ -192,7 +196,12 @@ def handle_move(parts, logger):
     if len(parts) < 2:
         logger.error("MOVE message missing parameters.")
         return
-    direction = parts[1]
+    direction = parts[1].strip().lower()
+    # Allowed movement commands: "f", "r", "fl", "fr", "bl", "br"
+    allowed_moves = {"f", "r", "fl", "fr", "bl", "br"}
+    if direction not in allowed_moves:
+        logger.error(f"Invalid MOVE direction: {direction}")
+        return
     logger.info(f"Movement command: {direction}")
 
 
