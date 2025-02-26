@@ -139,6 +139,7 @@ def handle_robot(parts, logger):
 
 def handle_obstacle(parts, logger):
     global obstacles_list
+    logger.info(parts)
     if len(parts) < 4:
         logger.error(f"OBSTACLE message missing parameters: {parts}")
         return
