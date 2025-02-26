@@ -38,13 +38,24 @@ def drawOwnBox(img, x1, y1, x2, y2, label, colour=(36, 255, 12), text_colour=(0,
     img = cv2.putText(img, label, (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, text_colour, 1)
     cv2.imwrite(f"image_results/annotated_image_{label}_{rand}.jpg", img)
 
+
+def apply_canny(image, threshold1=30, threshold2=100):
+
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, threshold1, threshold2)
+    edges_color = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+    
+    return edges_color
+
 # Predict using ONNX model
 def predictImage(image, session):
     """
     Predicts objects in an image using ONNX model.
     """
     img = Image.open(os.path.join('uploads', image))
-    img_array = np.array(img).astype(np.float32)
+    edges = apply_canny(img)
+    fused_img = cv2.addWeighted(np.array(img), 0.8, edges, 0.2, 0)
+    img_array = np.array(fused_img).astype(np.float32)
     img_array = np.expand_dims(img_array, axis=0)
     input_name = session.get_inputs()[0].name
     outputs = session.run(None, {input_name: img_array})
