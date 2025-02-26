@@ -288,6 +288,11 @@ def handle_cmd(parts, logger, client_sock):
     elif command == "beginfastest":
         logger.info("Task switched to Fastest Path Mode")
         send_text_message(client_sock, "Task switched to Fastest Path Mode", logger)
+    elif command == "resetmap":
+        obstacles_list = []
+        robot_position = {"x": 1, "y": 1, "dir": 0}
+        logger.info("Map reset: obstacles cleared and robot position reset.")
+        send_text_message(client_sock, "Map reset", logger)
     else:
         logger.warning(f"Unknown CMD command: {command}")
 
