@@ -6,6 +6,7 @@ logger = loggers["stm_comm"]
 
 
 # TODO: work with stm team to fix convertion factor if needed.
+<<<<<<< Updated upstream
 
 # NOTE: command list
 # RS00 - Gyro Reset - Reset the gyro before starting movement
@@ -19,6 +20,9 @@ logger = loggers["stm_comm"]
 
 
 def init_serial(port="/dev/ttyS0", baudrate=115200, timeout=1):
+=======
+def init_serial(port="/dev/ttyUSB0", baudrate=115200, timeout=1):
+>>>>>>> Stashed changes
     while True:
         try:
             ser = serial.Serial(port, baudrate, timeout=timeout)
@@ -63,6 +67,8 @@ def read_response(ser):
 if __name__ == "__main__":
     ser = init_serial()
     if ser:
-        send_command(ser, "MOVE,f")
+        send_command(ser, "B")
+        print("Response:", read_response(ser))
+        send_command(ser, "S")
         print("Response:", read_response(ser))
         ser.close()
