@@ -69,7 +69,13 @@ def predictImage(image, session):
                 break
         if isinstance(pred, (list, np.ndarray)):
             drawOwnBox(np.array(img), pred[0], pred[1], pred[2], pred[3], str(pred[5]))
-    name_to_id = {"NA": 'NA', "Bullseye": 10, "Right": 38, "Left": 39}
+    name_to_id = {
+        "NA": 'NA', "Bullseye": 99, "One": 11, "Two": 12, "Three": 13,
+        "Four": 14, "Five": 15, "Six": 16, "Seven": 17, "Eight": 18, "Nine": 19,
+        "A": 20, "B": 21, "C": 22, "D": 23, "E": 24, "F": 25, "G": 26, "H": 27,
+        "S": 28, "T": 29, "U": 30, "V": 31, "W": 32, "X": 33, "Y": 34, "Z": 35,
+        "Up": 36, "Down": 37, "Right": 38, "Left": 39, "Stop": 40
+    }
     return str(name_to_id.get(str(pred[5]), 'NA')) if isinstance(pred, (list, np.ndarray)) else 'NA'
 
 # Stitch detected images
