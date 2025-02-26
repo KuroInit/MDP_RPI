@@ -21,7 +21,7 @@ def drawOwnBox(img, x1, y1, x2, y2, label, colour=(36, 255, 12), text_colour=(0,
     Draws a bounding box with a label on the image.
     """
     name_to_id = {
-        "NA": 'NA', "Bullseye": 10, "One": 11, "Two": 12, "Three": 13,
+        "NA": 'NA', "Bullseye": 99, "One": 11, "Two": 12, "Three": 13,
         "Four": 14, "Five": 15, "Six": 16, "Seven": 17, "Eight": 18, "Nine": 19,
         "A": 20, "B": 21, "C": 22, "D": 23, "E": 24, "F": 25, "G": 26, "H": 27,
         "S": 28, "T": 29, "U": 30, "V": 31, "W": 32, "X": 33, "Y": 34, "Z": 35,
