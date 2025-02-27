@@ -13,8 +13,9 @@ from web_server.utils.helper import commandGenerator
 from config.logging_config import loggers  # Import Loguru config
 from web_server.utils.imageRec import loadModel, predictImage
 import cv2
-from picamera import PiCamera
-from picamera.array import PiRGBArray
+
+# Use Picamera2 instead of the legacy PiCamera
+from picamera2 import Picamera2
 
 app = FastAPI()
 app.add_middleware(
@@ -201,17 +202,25 @@ def snap_handler(command: str):
     """
     Snap handler for SNAP commands.
     Extracts the numeric part (if any) and logs the snap command.
+    Uses Picamera2 instead of the legacy PiCamera.
     """
     # Extract the number after "SNAP" (if any)
     num = command[4:].strip()
     loggers.info(f"Snap command received: {num}")
 
     try:
-        camera = PiCamera()
+        # Initialize Picamera2
+        picam2 = Picamera2()
+        # Configure for still capture
+        config = picam2.create_still_configuration()
+        picam2.configure(config)
+        picam2.start()
+
         img_name = f"snap_{int(time.time())}.jpg"
         img_path = os.path.join("uploads", img_name)
-        camera.capture(img_path)
-        camera.close()
+        # Capture image directly to a file
+        picam2.capture_file(img_path)
+        picam2.stop()
         loggers.info(f"Image saved: {img_path}")
     except Exception as e:
         loggers.error(f"Failed to capture image: {e}")
@@ -254,37 +263,6 @@ def run_task1(result: dict):
         time.sleep(1)
     logger.info("Task1 execution complete")
 
-
-# Uncomment or update these endpoints as needed.
-# @app.post("/image")
-# async def predictImage(file: UploadFile = File(...)):
-#     """
-#     Main endpoint for running image prediction model and saving it.
-#     :return: a json object with a key "result" and a dictionary with keys "obstacle_id" and "image_id"
-#     """
-#     filename = file.filename
-#     file_location = os.path.join('uploads', filename)
-#
-#     # save the file
-#     with open(file_location, "wb") as buffer:
-#         buffer.write(await file.read())
-#
-#     # MAY NEED TO CHANGE DEPENDING ON FILE NAME AFTER RPI SCREENSHOT
-#     constituents = filename.split("_")
-#     obstacle_id = constituents[1]
-#
-#     image_id = predictImage(filename)
-#
-#     return {
-#         "obstacle_id": obstacle_id,
-#         "image_id": image_id
-#         }
-#
-# @app.get("/stitch")
-# async def stitch():
-#     img = stitchImage()
-#     img.show()
-#     return {"result": "ok"}
 
 if __name__ == "__main__":
     import uvicorn
