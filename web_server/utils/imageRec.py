@@ -12,7 +12,7 @@ def loadModel():
     """
     Load ONNX model from directory
     """
-    session = ort.InferenceSession("./trained_models/yolov11n.onnx")
+    session = ort.InferenceSession("./trained_models/v8_white_bg.onnx")
     return session
 
 # Draw bounding boxes and labels
