@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snap Image</title>
+    <script>
+        async function snapImage() {
+            const response = await fetch("/snap", { method: "POST" });
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById("result").innerText = "Result: " + data.result;
+                document.getElementById("image").src = data.image;
+            } else {
+                document.getElementById("result").innerText = "Error: " + data.error;
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Snap Image</h1>
+    <button onclick="snapImage()">Capture Image</button>
+    <p id="result"></p>
+    <img id="image" src="" alt="Captured Image" style="max-width: 300px; display: block;">
+</body>
+</html>
