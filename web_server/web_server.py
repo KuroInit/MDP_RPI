@@ -205,7 +205,7 @@ def snap_handler(command: str):
     # Extract the number after "SNAP" (if any)
     num = command[4:].strip()
     loggers.info(f"Snap command received: {num}")
-    
+
     try:
         camera = PiCamera()
         img_name = f"snap_{int(time.time())}.jpg"
@@ -216,24 +216,18 @@ def snap_handler(command: str):
     except Exception as e:
         loggers.error(f"Failed to capture image: {e}")
         return
-    
+
     # Load the ONNX model
     session = loadModel()
-    
+
     # Run inference
     result = predictImage(img_name, session)
     loggers.info(f"Inference result: {result}")
-    
+
     return result
 
 
 def run_task1(result: dict):
-    """
-    Processes the algorithm result by iterating over the command list.
-    Commands containing "SNAP" are handled by the snap handler.
-    All other commands are sent to the STM service via IPC.
-    This function runs as a background task.
-    """
     commands = result.get("data", {}).get("commands", [])
     if not commands:
         logger.error("No commands found in algorithm result.")
@@ -243,11 +237,19 @@ def run_task1(result: dict):
         if command.upper().startswith("SNAP"):
             snap_handler(command)
         else:
-            try:
-                response = send_command_to_stm(command)
-                logger.info(f"Sent command: {command}, STM response: {response}")
-            except Exception as e:
-                logger.error(f"Error sending command {command}: {e}")
+            ack_received = False
+            while not ack_received:
+                try:
+                    response = send_command_to_stm(command)
+                    logger.info(f"Sent command: {command}, STM response: {response}")
+                    if "ACK" in response:
+                        ack_received = True
+                    else:
+                        logger.info("ACK not received yet; waiting...")
+                        time.sleep(1)  # delay before checking again
+                except Exception as e:
+                    logger.error(f"Error sending command {command}: {e}")
+                    time.sleep(1)  # wait before retrying on error
         # Delay between commands; adjust as needed based on robot response time
         time.sleep(1)
     logger.info("Task1 execution complete")
