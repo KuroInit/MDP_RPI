@@ -5,3 +5,4 @@ web_server/__pycache__/
 /.DS_Store
 .DS_Store
 web_server/utils/.DS_Store
+/static
