@@ -6,6 +6,7 @@ import numpy as np
 from flask import Flask, jsonify, request
 import subprocess  # To run libcamera commands
 import onnxruntime  # This import remains if you need onnxruntime elsewhere
+import onnx
 
 from ultralytics import YOLO
 
