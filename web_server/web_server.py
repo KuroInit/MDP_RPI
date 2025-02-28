@@ -13,6 +13,7 @@ from web_server.utils.helper import commandGenerator
 from config.logging_config import loggers  # Import Loguru config
 from web_server.utils.imageRec import loadModel, predictImage
 import cv2
+import onnx as ort
 
 # Use Picamera2 instead of the legacy PiCamera
 from picamera2 import Picamera2
