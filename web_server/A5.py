@@ -148,7 +148,7 @@ def check_block_faces():
 
     for face in range(4):
         print(f"\nChecking face {face + 1}...")
-        send_command("SF010")  # Move forward 10 cm.
+        send_command("SF030")  # Move forward 10 cm.
         time.sleep(1)
 
         if capture_and_check():
@@ -157,7 +157,7 @@ def check_block_faces():
             break
         else:
             print(f"Face {face + 1} is not valid.")
-            send_command("RL090")  # Turn left.
+            send_command("LF090")  # Turn left.
             time.sleep(2)
             send_command("SF010")  # Move straight.
             time.sleep(2)
