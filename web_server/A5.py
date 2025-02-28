@@ -2,7 +2,6 @@ import serial
 import time
 import numpy as np
 import subprocess
-import picamera
 from ultralytics import YOLO
 from PIL import Image  # Use Pillow to load images
 
@@ -43,7 +42,6 @@ NAME_TO_CHARACTER = {
 }
 
 # Load the YOLO ONNX model locally.
-# Update the model path as needed.
 MODEL_PATH = "web_server/utils/trained_models/v8_white_bg.onnx"
 model = YOLO(MODEL_PATH)
 
@@ -51,19 +49,16 @@ model = YOLO(MODEL_PATH)
 CAPTURED_IMAGE_PATH = "capture.jpg"
 
 
-# Capture image using picamera
-def capture_image_with_picamera():
+# Capture image using libcamera-jpeg with resolution 640x640.
+def capture_image_with_libcamera_jpeg():
     try:
-        with picamera.PiCamera() as camera:
-            camera.resolution = (640, 480)  # Adjust as needed
-            camera.start_preview()
-            time.sleep(2)  # Allow camera to adjust exposure
-            camera.capture(CAPTURED_IMAGE_PATH)
-            camera.stop_preview()
-        print("Image captured using Picamera.")
+        # Build the libcamera-jpeg command with the desired resolution.
+        command = f"libcamera-jpeg -o {CAPTURED_IMAGE_PATH} --width 640 --height 640"
+        subprocess.run(command, shell=True, check=True)
+        print("Image captured using libcamera-jpeg.")
         return True
     except Exception as e:
-        print("Error capturing image with Picamera:", e)
+        print("Error capturing image with libcamera-jpeg:", e)
         return False
 
 
@@ -86,10 +81,10 @@ def send_command(command):
 
 def capture_and_check():
     """
-    Captures an image using picamera and runs inference using the local YOLO ONNX model.
+    Captures an image using libcamera-jpeg and runs inference using the local YOLO ONNX model.
     Returns True if the detected face is "Bullseye" (i.e. a valid face), otherwise False.
     """
-    if not capture_image_with_picamera():
+    if not capture_image_with_libcamera_jpeg():
         return False
 
     try:
