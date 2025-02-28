@@ -53,7 +53,17 @@ CAPTURED_IMAGE_PATH = "capture.jpg"
 # We'll use libcamera-jpg to capture an image.
 def capture_image_with_libcamera():
     try:
-        cmd = ["libcamera-jpeg", "-o", CAPTURED_IMAGE_PATH, "--timeout", "1000"]
+        cmd = [
+            "libcamera-jpeg",
+            "-o",
+            CAPTURED_IMAGE_PATH,
+            "--width",
+            "640",
+            "--height",
+            "480",
+            "--timeout",
+            "1000",
+        ]
         subprocess.run(cmd, check=True)
         print("Image captured using libcamera-jpg.")
         return True
