@@ -143,8 +143,12 @@ async def test_picam(request: Request):
         picam2.stop()
         logger.info(f"Image captured and saved to {image_path}")
 
-        # Load the ONNX model.
-        session = loadModel()
+        # Load the ONNX model from the specified path.
+        model_path = (
+            "/home/mdp23/MDP_RPI/web_server/utils/trained_models/v8_white_bg.onnx"
+        )
+        session = ort.InferenceSession(model_path)
+        logger.info(f"Loaded ONNX model from {model_path}")
 
         # Run inference on the captured image.
         # Expecting the result to include bounding box data under the "boxes" key.
