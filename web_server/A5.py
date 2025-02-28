@@ -54,13 +54,13 @@ CAPTURED_IMAGE_PATH = "capture.jpg"
 def capture_image_with_libcamera():
     try:
         cmd = [
-            "libcamera-jpeg",
+            "libcamera-jpg",
             "-o",
             CAPTURED_IMAGE_PATH,
             "--width",
             "640",
             "--height",
-            "480",
+            "640",
             "--timeout",
             "1000",
         ]
