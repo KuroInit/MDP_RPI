@@ -50,7 +50,6 @@ model = YOLO(MODEL_PATH)
 CAPTURED_IMAGE_PATH = "capture.jpg"
 
 
-# We'll use libcamera-jpg to capture an image.
 def capture_image_with_libcamera():
     try:
         cmd = [
@@ -91,16 +90,22 @@ def send_command(command):
 
 def capture_and_check():
     """
-    Captures an image using libcamera-jpg and runs inference using the local YOLO ONNX model.
+    Captures an image using libcamera-jpg, resizes it with OpenCV,
+    and runs inference using the local YOLO ONNX model.
     Returns True if the detected face is "Bullseye" (i.e. a valid face), otherwise False.
     """
     if not capture_image_with_libcamera():
         return False
 
+    # Load the captured image using OpenCV.
     frame = cv2.imread(CAPTURED_IMAGE_PATH)
     if frame is None or frame.size == 0:
         print("Failed to load the captured image.")
         return False
+
+    # Resize the image to 640x640.
+    frame = cv2.resize(frame, (640, 640))
+    print("Image resized to 640x640.")
 
     # Validate and adjust the image format.
     if len(frame.shape) == 2:
@@ -147,7 +152,7 @@ def check_block_faces():
     Checks each of the 4 faces of a square object.
     For each face:
       1. The robot moves forward to approach the current face.
-      2. It captures an image using libcamera-jpg and runs inference to check if the face is valid.
+      2. It captures an image using libcamera-jpg (resized to 640x640) and runs inference to check if the face is valid.
       3. If not valid, it performs a repositioning sequence to face the next side.
          The repositioning sequence is: turn left, move straight, turn right, then turn right again.
     """
