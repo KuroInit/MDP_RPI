@@ -49,7 +49,7 @@ MODEL_PATH = os.path.join(
     CURRENT_DIR, "..", "web_server", "utils", "trained_models", "v8_white_bg.onnx"
 )
 
-# Save the captured (and later annotated) image in the current working directory.
+# Save the output image in the current working directory
 OUTPUT_IMAGE_PATH = os.path.join(os.getcwd(), "result.jpg")
 
 try:
@@ -66,20 +66,20 @@ app = Flask(__name__)
 @app.route("/capture", methods=["GET"])
 def capture_and_detect():
     try:
-        # Set a flag to use libcamera for capture.
+        # Use libcamera for capture.
         use_libcamera = True
 
         if use_libcamera:
-            # Use the libcamera-jpg command to capture an image.
-            # The --timeout option waits (in milliseconds) before capturing.
-            cmd = ["libcamera-jpg", "-o", OUTPUT_IMAGE_PATH, "--timeout", "1000"]
+            # Capture image using libcamera-still with the specified command.
+            # This command will capture an image with a 1000ms timeout and save it to OUTPUT_IMAGE_PATH.
+            cmd = ["libcamera-still", "-o", OUTPUT_IMAGE_PATH, "--timeout", "1000"]
             subprocess.run(cmd, check=True)
             # Load the captured image.
             frame = cv2.imread(OUTPUT_IMAGE_PATH)
             if frame is None or frame.size == 0:
-                app.logger.error("Failed to load image captured by libcamera.")
+                app.logger.error("Failed to load image captured by libcamera-still.")
                 return (
-                    jsonify({"error": "Failed to capture image using libcamera"}),
+                    jsonify({"error": "Failed to capture image using libcamera-still"}),
                     500,
                 )
         else:
