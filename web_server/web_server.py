@@ -117,6 +117,93 @@ async def status():
     return {"result": "ok"}
 
 
+@app.get("/test-picam", response_class=HTMLResponse)
+async def test_picam(request: Request):
+    """
+    Endpoint to test PiCamera capture, model inference, and display the output image
+    with bounding boxes overlaid on the webserver.
+    """
+    try:
+        # Initialize and configure Picamera2 for a still capture.
+        picam2 = Picamera2()
+        config = picam2.create_still_configuration()
+        picam2.configure(config)
+        picam2.start()
+
+        # Define uploads directory and filename.
+        uploads_dir = "uploads"
+        if not os.path.exists(uploads_dir):
+            os.makedirs(uploads_dir)
+        timestamp = int(time.time())
+        image_name = f"picam_{timestamp}.jpg"
+        image_path = os.path.join(uploads_dir, image_name)
+
+        # Capture and save the image.
+        picam2.capture_file(image_path)
+        picam2.stop()
+        logger.info(f"Image captured and saved to {image_path}")
+
+        # Load the ONNX model.
+        session = loadModel()
+
+        # Run inference on the captured image.
+        # Expecting the result to include bounding box data under the "boxes" key.
+        result = predictImage(image_name, session)
+        boxes = result.get("boxes", [])
+        logger.info(f"Inference result: {result}")
+
+        # Load the image using OpenCV.
+        image = cv2.imread(image_path)
+
+        # Annotate the image with bounding boxes.
+        for box in boxes:
+            # Expect each box to contain x, y, w, h and optionally a label.
+            x = box.get("x", 0)
+            y = box.get("y", 0)
+            w = box.get("w", 0)
+            h = box.get("h", 0)
+            label = box.get("label", "object")
+            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.putText(
+                image, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2
+            )
+
+        # Save the annotated image.
+        annotated_image_name = f"annotated_{image_name}"
+        annotated_image_path = os.path.join(uploads_dir, annotated_image_name)
+        cv2.imwrite(annotated_image_path, image)
+        logger.info(f"Annotated image saved to {annotated_image_path}")
+
+        # Encode the annotated image in base64 to embed it in HTML.
+        with open(annotated_image_path, "rb") as img_file:
+            encoded_image = base64.b64encode(img_file.read()).decode("utf-8")
+
+        # Build the HTML content.
+        html_content = f"""
+        <html>
+        <head>
+            <title>PiCamera Test &amp; Inference</title>
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                img {{ max-width: 100%; height: auto; }}
+                pre {{ background: #f4f4f4; padding: 10px; }}
+            </style>
+        </head>
+        <body>
+            <h1>PiCamera Capture and Model Inference</h1>
+            <h2>Annotated Image</h2>
+            <img src="data:image/jpeg;base64,{encoded_image}" alt="Annotated Image" />
+            <h2>Inference Results</h2>
+            <pre>{result}</pre>
+        </body>
+        </html>
+        """
+        return HTMLResponse(content=html_content)
+    except Exception as e:
+        logger.error(f"Error in /test-picam endpoint: {e}")
+        raise HTTPException(status_code=500, detail=f"Test PiCamera error: {e}")
+
+
 @app.post("/path")
 async def pathFinding(request: PathFindingRequest, background_tasks: BackgroundTasks):
     """Main endpoint for the path finding algorithm."""
@@ -284,4 +371,4 @@ def run_task1(result: dict):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="localhost", port=8000) # Change back to 0.0.0.0
+    uvicorn.run(app, host="localhost", port=8000)  # Change back to 0.0.0.0
