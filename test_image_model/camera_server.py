@@ -96,6 +96,7 @@ def capture_and_detect():
         best_result_id = None
         best_result = None
         best_result_charactor = "NA"  # Initialize with default value
+        last_frame = None  # Track the last valid frame
 
         for i in range(10):
             # Capture frame using the selected method.
@@ -106,6 +107,9 @@ def capture_and_detect():
                 ret, frame = camera.read()
                 if not ret or frame is None:
                     continue
+
+            # Save the current frame so we can use it if no detection is found.
+            last_frame = frame
 
             results = model(frame, verbose=False)
 
@@ -130,17 +134,20 @@ def capture_and_detect():
 
             time.sleep(0.1)
 
+        # If no valid frame was captured, return an error.
+        if last_frame is None:
+            if use_picamera:
+                camera.close()
+            else:
+                camera.release()
+            return jsonify({"error": "No valid frame captured from the camera."}), 500
+
         # Save the output image.
         if best_result is not None:
             annotated_frame = best_result.plot()
             cv2.imwrite(OUTPUT_IMAGE_PATH, annotated_frame)
         else:
-            if not use_picamera:
-                cv2.imwrite(OUTPUT_IMAGE_PATH, frame)
-            else:
-                frame = np.empty((480, 640, 3), dtype=np.uint8)
-                camera.capture(frame, "bgr")
-                cv2.imwrite(OUTPUT_IMAGE_PATH, frame)
+            cv2.imwrite(OUTPUT_IMAGE_PATH, last_frame)
 
         # Close the camera appropriately.
         if use_picamera:
