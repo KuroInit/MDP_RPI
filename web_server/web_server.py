@@ -14,6 +14,7 @@ from config.logging_config import loggers  # Import Loguru config
 from web_server.utils.imageRec import loadModel, predictImage
 import cv2
 from ultralytics import YOLO
+import onnxruntime
 
 # Use Picamera2 instead of the legacy PiCamera
 from picamera2 import Picamera2
