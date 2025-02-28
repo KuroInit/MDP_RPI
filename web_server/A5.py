@@ -1,10 +1,10 @@
 import serial
 import time
-import cv2
 import numpy as np
 import subprocess
 import picamera
 from ultralytics import YOLO
+from PIL import Image  # Use Pillow to load images
 
 # Mapping of detection names to numeric values.
 NAME_TO_CHARACTER = {
@@ -50,6 +50,7 @@ model = YOLO(MODEL_PATH)
 # Path to temporarily store captured image.
 CAPTURED_IMAGE_PATH = "capture.jpg"
 
+
 # Capture image using picamera
 def capture_image_with_picamera():
     try:
@@ -91,24 +92,19 @@ def capture_and_check():
     if not capture_image_with_picamera():
         return False
 
-    frame = cv2.imread(CAPTURED_IMAGE_PATH)
-    if frame is None or frame.size == 0:
-        print("Failed to load the captured image.")
+    try:
+        # Load the image using Pillow and ensure it's in RGB format.
+        image = Image.open(CAPTURED_IMAGE_PATH).convert("RGB")
+        frame = np.array(image)
+    except Exception as e:
+        print("Failed to load the captured image:", e)
         return False
 
-    # Validate and adjust the image format.
-    if len(frame.shape) == 2:
-        print("Captured frame is grayscale; converting to BGR.")
-        frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
-    elif len(frame.shape) == 3:
-        if frame.shape[2] == 4:
-            print("Captured frame has 4 channels; converting to BGR.")
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
-        elif frame.shape[2] != 3:
-            print(
-                f"Captured frame has {frame.shape[2]} channels; truncating to 3 channels."
-            )
-            frame = frame[:, :, :3]
+    # Verify the image is as expected.
+    if frame is None or frame.size == 0:
+        print("Failed to load the captured image or image is empty.")
+        return False
+
     if frame.dtype != np.uint8:
         print(f"Captured frame has dtype {frame.dtype}; converting to uint8.")
         frame = frame.astype(np.uint8)
