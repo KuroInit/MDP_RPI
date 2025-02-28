@@ -2,6 +2,7 @@ import serial
 import time
 import cv2
 import numpy as np
+import subprocess
 from ultralytics import YOLO
 
 # Mapping of detection names to numeric values.
@@ -45,13 +46,20 @@ NAME_TO_CHARACTER = {
 MODEL_PATH = "path/to/your/model.onnx"
 model = YOLO(MODEL_PATH)
 
-# Flag to indicate if PiCamera2 is available.
-try:
-    from picamera2 import PiCamera2
+# Path to temporarily store captured image.
+CAPTURED_IMAGE_PATH = "capture.jpg"
 
-    picamera_available = True
-except ImportError:
-    picamera_available = False
+
+# We'll use libcamera-jpg to capture an image.
+def capture_image_with_libcamera():
+    try:
+        cmd = ["libcamera-jpg", "-o", CAPTURED_IMAGE_PATH, "--timeout", "1000"]
+        subprocess.run(cmd, check=True)
+        print("Image captured using libcamera-jpg.")
+        return True
+    except Exception as e:
+        print("Error capturing image with libcamera-jpg:", e)
+        return False
 
 
 def send_command(command):
@@ -73,46 +81,33 @@ def send_command(command):
 
 def capture_and_check():
     """
-    Captures an image locally and runs inference using the local YOLO ONNX model.
+    Captures an image using libcamera-jpg and runs inference using the local YOLO ONNX model.
     Returns True if the detected face is "Bullseye" (i.e. a valid face), otherwise False.
     """
-    frame = None
-    # Capture image using PiCamera2 if available; else use OpenCV.
-    if picamera_available:
-        try:
-            camera = PiCamera2()
-            camera.resolution = (640, 480)
-            time.sleep(2)  # Warm-up delay.
-            frame = np.empty((480, 640, 3), dtype=np.uint8)
-            camera.capture(frame, "bgr")
-            camera.close()
-        except Exception as e:
-            print("PiCamera2 capture error:", e)
-    else:
-        cap = cv2.VideoCapture(0)
-        ret, frame = cap.read()
-        cap.release()
-        if not ret or frame is None:
-            print("Failed to capture image from camera.")
-            return False
+    if not capture_image_with_libcamera():
+        return False
 
-    # (Optional) Validate and adjust the image format:
-    if frame is not None:
-        if len(frame.shape) == 2:
-            print("Captured frame is grayscale; converting to BGR.")
-            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
-        elif len(frame.shape) == 3:
-            if frame.shape[2] == 4:
-                print("Captured frame has 4 channels; converting to BGR.")
-                frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
-            elif frame.shape[2] != 3:
-                print(
-                    f"Captured frame has {frame.shape[2]} channels; truncating to 3 channels."
-                )
-                frame = frame[:, :, :3]
-        if frame.dtype != np.uint8:
-            print(f"Captured frame has dtype {frame.dtype}; converting to uint8.")
-            frame = frame.astype(np.uint8)
+    frame = cv2.imread(CAPTURED_IMAGE_PATH)
+    if frame is None or frame.size == 0:
+        print("Failed to load the captured image.")
+        return False
+
+    # Validate and adjust the image format.
+    if len(frame.shape) == 2:
+        print("Captured frame is grayscale; converting to BGR.")
+        frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+    elif len(frame.shape) == 3:
+        if frame.shape[2] == 4:
+            print("Captured frame has 4 channels; converting to BGR.")
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
+        elif frame.shape[2] != 3:
+            print(
+                f"Captured frame has {frame.shape[2]} channels; truncating to 3 channels."
+            )
+            frame = frame[:, :, :3]
+    if frame.dtype != np.uint8:
+        print(f"Captured frame has dtype {frame.dtype}; converting to uint8.")
+        frame = frame.astype(np.uint8)
 
     # Run inference on the captured frame.
     results = model(frame, verbose=False)
@@ -139,29 +134,37 @@ def capture_and_check():
 
 def check_block_faces():
     """
-    Checks each of the 4 faces of a block:
-      1. Moves forward to approach the current face.
-      2. Captures an image locally and runs inference to check if the face is valid.
-      3. If not valid, rotates 90° to check the next face.
+    Checks each of the 4 faces of a square object.
+    For each face:
+      1. The robot moves forward to approach the current face.
+      2. It captures an image using libcamera-jpg and runs inference to check if the face is valid.
+      3. If not valid, it performs a repositioning sequence to face the next side.
+         The repositioning sequence is: turn left, move straight, turn right, then turn right again.
     """
     valid_face_found = False
 
     for face in range(4):
         print(f"\nChecking face {face + 1}...")
-        # Move forward 10 cm to approach the current face.
-        send_command("SF010:")
+        # Approach the current face.
+        send_command("SF010:")  # Move forward 10 cm.
         time.sleep(1)  # Wait for movement to complete.
 
-        # Capture image locally and check face validity.
+        # Capture image and check face validity.
         if capture_and_check():
             print(f"Valid face found on face {face + 1}.")
             valid_face_found = True
             break
         else:
             print(f"Face {face + 1} is not valid.")
-            # Rotate 90° to check the next face.
-            send_command("RF090:")
-            time.sleep(1)  # Wait for rotation to complete.
+            # Reposition to face the next side of the square.
+            send_command("RL090:")  # Turn left.
+            time.sleep(1)
+            send_command("SF010:")  # Move straight.
+            time.sleep(1)
+            send_command("RF090:")  # Turn right.
+            time.sleep(1)
+            send_command("RF090:")  # Turn right again.
+            time.sleep(1)
 
     if not valid_face_found:
         print("No valid face found on any side.")
