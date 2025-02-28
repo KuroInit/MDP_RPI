@@ -113,113 +113,6 @@ def readRoot():
     return {"Backend": "Running"}
 
 
-@app.get("/status")
-async def status():
-    """Health check endpoint."""
-    return {"result": "ok"}
-
-
-@app.get("/test-picam", response_class=HTMLResponse)
-async def test_picam(request: Request):
-    """
-    Endpoint to test PiCamera capture, model inference, and display the output image
-    with bounding boxes overlaid on the webserver.
-    """
-    try:
-        # Initialize and configure Picamera2 for a still capture.
-        picam2 = Picamera2()
-        config = picam2.create_still_configuration()
-        picam2.configure(config)
-        picam2.start()
-
-        # Define uploads directory and filename.
-        uploads_dir = "uploads"
-        if not os.path.exists(uploads_dir):
-            os.makedirs(uploads_dir)
-        timestamp = int(time.time())
-        image_name = f"picam_{timestamp}.jpg"
-        image_path = os.path.join(uploads_dir, image_name)
-
-        # Capture and save the image.
-        picam2.capture_file(image_path)
-        picam2.stop()
-        logger.info(f"Image captured and saved to {image_path}")
-
-        # Load the ONNX model using Ultralytics YOLO.
-        model_path = (
-            "/home/mdp23/MDP_RPI/web_server/utils/trained_models/v8_white_bg.onnx"
-        )
-        model = YOLO(model_path)
-        logger.info(f"Loaded Ultralytics YOLO model from {model_path}")
-
-        # Run inference on the captured image.
-        results = model(image_path)  # This returns a list of result objects.
-        result = results[0]  # Use the first (and typically only) result.
-        logger.info(f"Inference result: {result}")
-
-        # Extract bounding boxes from the result.
-        # Note: The structure of 'result' depends on your model.
-        # Here we assume 'result.boxes' contains the bounding boxes.
-        boxes = result.boxes if hasattr(result, "boxes") else []
-
-        # Load the image using OpenCV.
-        image = cv2.imread(image_path)
-
-        # Annotate the image with bounding boxes.
-        # Here we iterate over each detected box.
-        for box in boxes:
-            # box.xyxy contains the bounding box coordinates as a tensor.
-            coords = box.xyxy[0].cpu().numpy().astype(int)  # [x1, y1, x2, y2]
-            x1, y1, x2, y2 = coords
-            # Optionally, you can retrieve class info or confidence here.
-            label = str(box.cls.cpu().numpy()[0]) if hasattr(box, "cls") else "object"
-            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-            cv2.putText(
-                image,
-                label,
-                (x1, y1 - 10),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.5,
-                (0, 255, 0),
-                2,
-            )
-
-        # Save the annotated image.
-        annotated_image_name = f"annotated_{image_name}"
-        annotated_image_path = os.path.join(uploads_dir, annotated_image_name)
-        cv2.imwrite(annotated_image_path, image)
-        logger.info(f"Annotated image saved to {annotated_image_path}")
-
-        # Encode the annotated image in base64 to embed it in HTML.
-        with open(annotated_image_path, "rb") as img_file:
-            encoded_image = base64.b64encode(img_file.read()).decode("utf-8")
-
-        # Build the HTML content.
-        html_content = f"""
-        <html>
-        <head>
-            <title>PiCamera Test &amp; Inference</title>
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 20px; }}
-                img {{ max-width: 100%; height: auto; }}
-                pre {{ background: #f4f4f4; padding: 10px; }}
-            </style>
-        </head>
-        <body>
-            <h1>PiCamera Capture and Model Inference</h1>
-            <h2>Annotated Image</h2>
-            <img src="data:image/jpeg;base64,{encoded_image}" alt="Annotated Image" />
-            <h2>Inference Results</h2>
-            <pre>{result}</pre>
-        </body>
-        </html>
-        """
-        return HTMLResponse(content=html_content)
-    except Exception as e:
-        logger.error(f"Error in /test-picam endpoint: {e}")
-        raise HTTPException(status_code=500, detail=f"Test PiCamera error: {e}")
-
-
 @app.post("/path")
 async def pathFinding(request: PathFindingRequest, background_tasks: BackgroundTasks):
     """Main endpoint for the path finding algorithm."""
@@ -339,6 +232,79 @@ def snap_handler(command: str):
     return result
 
 
+def parse_command(command: str) -> str:
+    """
+    Parses a command string into the proper format for the STM.
+    Example:
+      "FW10:" -> "SF010:" (Forward 10cm)
+      "BW10:" -> "SB010:" (Backward 10cm)
+      "FR00:" -> "RF090:" (Forward right with default angle 90°)
+      "FL00:" -> "RL090:" (Forward left with default angle 90°)
+      "BR00:" -> "RB090:" (Backward right with default angle 90°)
+      "BL00:" -> "LB090:" (Backward left with default angle 90°)
+    """
+    # Remove trailing colon if present and strip spaces.
+    command = command.strip()
+    if command.endswith(":"):
+        command = command[:-1]
+    cmd_upper = command.upper()
+
+    # SNAP commands are handled separately.
+    if cmd_upper.startswith("SNAP"):
+        return command + ":"
+
+    # For movement commands, extract the numeric part.
+    if cmd_upper.startswith("FW"):
+        # Forward -> SF
+        distance = "".join(filter(str.isdigit, command[2:]))
+        if not distance:
+            distance = "0"
+        distance = distance.zfill(3)
+        return f"SF{distance}:"
+    elif cmd_upper.startswith("BW"):
+        # Backward -> SB
+        distance = "".join(filter(str.isdigit, command[2:]))
+        if not distance:
+            distance = "0"
+        distance = distance.zfill(3)
+        return f"SB{distance}:"
+    elif cmd_upper.startswith("FR"):
+        # Forward right -> RF; if no numeric, default to 090.
+        angle = "".join(filter(str.isdigit, command[2:]))
+        if not angle:
+            angle = "090"
+        else:
+            angle = angle.zfill(3)
+        return f"RF{angle}:"
+    elif cmd_upper.startswith("FL"):
+        # Forward left -> RL; default angle 090.
+        angle = "".join(filter(str.isdigit, command[2:]))
+        if not angle:
+            angle = "090"
+        else:
+            angle = angle.zfill(3)
+        return f"RL{angle}:"
+    elif cmd_upper.startswith("BR"):
+        # Backward right -> RB; default angle 090.
+        angle = "".join(filter(str.isdigit, command[2:]))
+        if not angle:
+            angle = "090"
+        else:
+            angle = angle.zfill(3)
+        return f"RB{angle}:"
+    elif cmd_upper.startswith("BL"):
+        # Backward left -> LB; default angle 090.
+        angle = "".join(filter(str.isdigit, command[2:]))
+        if not angle:
+            angle = "090"
+        else:
+            angle = angle.zfill(3)
+        return f"LB{angle}:"
+    else:
+        # If command is unknown, return it with a trailing colon.
+        return command + ":"
+
+
 def run_task1(result: dict):
     commands = result.get("data", {}).get("commands", [])
     if not commands:
@@ -346,22 +312,27 @@ def run_task1(result: dict):
         return
 
     for i, command in enumerate(commands):
-        if command.upper().startswith("SNAP"):
-            snap_handler(command)
+        # Parse the command before sending it.
+        parsed_command = parse_command(command)
+
+        if parsed_command.upper().startswith("SNAP"):
+            snap_handler(parsed_command)
         else:
             ack_received = False
             while not ack_received:
                 try:
-                    response = send_command_to_stm(command)
-                    logger.info(f"Sent command: {command}, STM response: {response}")
+                    response = send_command_to_stm(parsed_command)
+                    logger.info(
+                        f"Sent command: {parsed_command}, STM response: {response}"
+                    )
                     if "ACK" in response:
                         ack_received = True
                     else:
                         logger.info("ACK not received yet; waiting...")
-                        time.sleep(1)  # delay before checking again
+                        time.sleep(1)  # Delay before checking again
                 except Exception as e:
-                    logger.error(f"Error sending command {command}: {e}")
-                    time.sleep(1)  # wait before retrying on error
+                    logger.error(f"Error sending command {parsed_command}: {e}")
+                    time.sleep(1)  # Wait before retrying on error
 
         # If there is another command to send, send the "ST00" command first and wait for ACK.
         if i < len(commands) - 1:
@@ -379,7 +350,7 @@ def run_task1(result: dict):
                     logger.error(f"Error sending command ST00: {e}")
                     time.sleep(1)
 
-        # Delay between commands; adjust as needed based on robot response time
+        # Delay between commands; adjust as needed based on robot response time.
         time.sleep(1)
     logger.info("Task1 execution complete")
 
