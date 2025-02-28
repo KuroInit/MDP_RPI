@@ -108,6 +108,31 @@ def capture_and_detect():
                 if not ret or frame is None:
                     continue
 
+            # Validate image format:
+            if frame is not None:
+                # Check if grayscale; if so, convert to BGR.
+                if len(frame.shape) == 2:
+                    app.logger.warning(
+                        "Captured frame is grayscale. Converting to BGR."
+                    )
+                    frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+                elif len(frame.shape) == 3:
+                    if frame.shape[2] == 4:
+                        app.logger.warning(
+                            "Captured frame has 4 channels. Converting to BGR."
+                        )
+                        frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
+                    elif frame.shape[2] != 3:
+                        app.logger.warning(
+                            f"Captured frame has {frame.shape[2]} channels. Truncating to 3 channels."
+                        )
+                        frame = frame[:, :, :3]
+                if frame.dtype != np.uint8:
+                    app.logger.warning(
+                        f"Captured frame has dtype {frame.dtype}. Converting to uint8."
+                    )
+                    frame = frame.astype(np.uint8)
+
             # Save the current frame so we can use it if no detection is found.
             last_frame = frame
 
