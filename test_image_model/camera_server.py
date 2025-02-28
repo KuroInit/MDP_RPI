@@ -79,7 +79,7 @@ def capture_and_detect():
             try:
                 camera = PiCamera2()
                 camera.resolution = (640, 480)
-                time.sleep(2)  # Allow the camera to warm up
+                time.sleep(6)  # Allow the camera to warm up
                 use_picamera = True
             except Exception as e:
                 app.logger.error(f"PiCamera initialization failed: {e}")
