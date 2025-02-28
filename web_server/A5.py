@@ -6,7 +6,7 @@ def send_command(command):
         ser = serial.Serial('/dev/ttyUSB0', 115200, timeout=1)  # Change to correct port
         ser.flush()
         
-        ser.write((command + '\n').encode())  # Send command
+        ser.write(command.encode())  # Send command
         print(f"Sent: {command}")
         
         time.sleep(0.1)  # Short delay for processing
