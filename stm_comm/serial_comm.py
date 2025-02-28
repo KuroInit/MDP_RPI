@@ -102,6 +102,7 @@ def start_ipc_server(ser, socket_path="/tmp/stm_ipc.sock"):
             conn.close()
 
 
+# update
 if __name__ == "__main__":
     ser = init_serial()
     if ser:
