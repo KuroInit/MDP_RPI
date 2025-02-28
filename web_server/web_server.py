@@ -13,7 +13,7 @@ from web_server.utils.helper import commandGenerator
 from config.logging_config import loggers  # Import Loguru config
 from web_server.utils.imageRec import loadModel, predictImage
 import cv2
-import onnx as ort
+from ultralytics import YOLO
 
 # Use Picamera2 instead of the legacy PiCamera
 from picamera2 import Picamera2
@@ -144,33 +144,43 @@ async def test_picam(request: Request):
         picam2.stop()
         logger.info(f"Image captured and saved to {image_path}")
 
-        # Load the ONNX model from the specified path.
+        # Load the ONNX model using Ultralytics YOLO.
         model_path = (
             "/home/mdp23/MDP_RPI/web_server/utils/trained_models/v8_white_bg.onnx"
         )
-        session = ort.InferenceSession(model_path)
-        logger.info(f"Loaded ONNX model from {model_path}")
+        model = YOLO(model_path)
+        logger.info(f"Loaded Ultralytics YOLO model from {model_path}")
 
         # Run inference on the captured image.
-        # Expecting the result to include bounding box data under the "boxes" key.
-        result = predictImage(image_name, session)
-        boxes = result.get("boxes", [])
+        results = model(image_path)  # This returns a list of result objects.
+        result = results[0]  # Use the first (and typically only) result.
         logger.info(f"Inference result: {result}")
+
+        # Extract bounding boxes from the result.
+        # Note: The structure of 'result' depends on your model.
+        # Here we assume 'result.boxes' contains the bounding boxes.
+        boxes = result.boxes if hasattr(result, "boxes") else []
 
         # Load the image using OpenCV.
         image = cv2.imread(image_path)
 
         # Annotate the image with bounding boxes.
+        # Here we iterate over each detected box.
         for box in boxes:
-            # Expect each box to contain x, y, w, h and optionally a label.
-            x = box.get("x", 0)
-            y = box.get("y", 0)
-            w = box.get("w", 0)
-            h = box.get("h", 0)
-            label = box.get("label", "object")
-            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            # box.xyxy contains the bounding box coordinates as a tensor.
+            coords = box.xyxy[0].cpu().numpy().astype(int)  # [x1, y1, x2, y2]
+            x1, y1, x2, y2 = coords
+            # Optionally, you can retrieve class info or confidence here.
+            label = str(box.cls.cpu().numpy()[0]) if hasattr(box, "cls") else "object"
+            cv2.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(
-                image, label, (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2
+                image,
+                label,
+                (x1, y1 - 10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.5,
+                (0, 255, 0),
+                2,
             )
 
         # Save the annotated image.
