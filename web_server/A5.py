@@ -3,6 +3,7 @@ import time
 import cv2
 import numpy as np
 import subprocess
+import picamera
 from ultralytics import YOLO
 
 # Mapping of detection names to numeric values.
@@ -49,25 +50,19 @@ model = YOLO(MODEL_PATH)
 # Path to temporarily store captured image.
 CAPTURED_IMAGE_PATH = "capture.jpg"
 
-
-def capture_image_with_libcamera():
+# Capture image using picamera
+def capture_image_with_picamera():
     try:
-        cmd = [
-            "libcamera-jpg",
-            "-o",
-            CAPTURED_IMAGE_PATH,
-            "--width",
-            "640",
-            "--height",
-            "640",
-            "--timeout",
-            "1000",
-        ]
-        subprocess.run(cmd, check=True)
-        print("Image captured using libcamera-jpg.")
+        with picamera.PiCamera() as camera:
+            camera.resolution = (640, 480)  # Adjust as needed
+            camera.start_preview()
+            time.sleep(2)  # Allow camera to adjust exposure
+            camera.capture(CAPTURED_IMAGE_PATH)
+            camera.stop_preview()
+        print("Image captured using Picamera.")
         return True
     except Exception as e:
-        print("Error capturing image with libcamera-jpg:", e)
+        print("Error capturing image with Picamera:", e)
         return False
 
 
@@ -90,22 +85,16 @@ def send_command(command):
 
 def capture_and_check():
     """
-    Captures an image using libcamera-jpg, resizes it with OpenCV,
-    and runs inference using the local YOLO ONNX model.
+    Captures an image using picamera and runs inference using the local YOLO ONNX model.
     Returns True if the detected face is "Bullseye" (i.e. a valid face), otherwise False.
     """
-    if not capture_image_with_libcamera():
+    if not capture_image_with_picamera():
         return False
 
-    # Load the captured image using OpenCV.
     frame = cv2.imread(CAPTURED_IMAGE_PATH)
     if frame is None or frame.size == 0:
         print("Failed to load the captured image.")
         return False
-
-    # Resize the image to 640x640.
-    frame = cv2.resize(frame, (640, 640))
-    print("Image resized to 640x640.")
 
     # Validate and adjust the image format.
     if len(frame.shape) == 2:
@@ -150,28 +139,20 @@ def capture_and_check():
 def check_block_faces():
     """
     Checks each of the 4 faces of a square object.
-    For each face:
-      1. The robot moves forward to approach the current face.
-      2. It captures an image using libcamera-jpg (resized to 640x640) and runs inference to check if the face is valid.
-      3. If not valid, it performs a repositioning sequence to face the next side.
-         The repositioning sequence is: turn left, move straight, turn right, then turn right again.
     """
     valid_face_found = False
 
     for face in range(4):
         print(f"\nChecking face {face + 1}...")
-        # Approach the current face.
         send_command("SF010:")  # Move forward 10 cm.
-        time.sleep(1)  # Wait for movement to complete.
+        time.sleep(1)
 
-        # Capture image and check face validity.
         if capture_and_check():
             print(f"Valid face found on face {face + 1}.")
             valid_face_found = True
             break
         else:
             print(f"Face {face + 1} is not valid.")
-            # Reposition to face the next side of the square.
             send_command("RL090:")  # Turn left.
             time.sleep(1)
             send_command("SF010:")  # Move straight.
