@@ -172,7 +172,12 @@ def check_block_faces():
 
 
 if __name__ == "__main__":
-    if check_block_faces():
-        print("Robot has found a valid face. Stopping further movements.")
-    else:
-        print("Robot did not find a valid face.")
+    try:
+        capture_and_check()
+    except Exception:
+        print("didnt work")
+
+    # if check_block_faces():
+    #    print("Robot has found a valid face. Stopping further movements.")
+    # else:
+    #    print("Robot did not find a valid face.")
