@@ -3,8 +3,7 @@ import time
 import cv2
 import numpy as np
 import subprocess
-
-# from ultralytics import YOLO
+from ultralytics import YOLO
 
 # Mapping of detection names to numeric values.
 NAME_TO_CHARACTER = {
@@ -44,8 +43,8 @@ NAME_TO_CHARACTER = {
 
 # Load the YOLO ONNX model locally.
 # Update the model path as needed.
-""" MODEL_PATH = "web_server/utils/trained_models/v9_noise_bg.onnx"
-model = YOLO(MODEL_PATH) """
+MODEL_PATH = "web_server/utils/trained_models/v8_white_bg.onnx"
+model = YOLO(MODEL_PATH)
 
 # Path to temporarily store captured image.
 CAPTURED_IMAGE_PATH = "capture.jpg"
@@ -54,7 +53,7 @@ CAPTURED_IMAGE_PATH = "capture.jpg"
 # We'll use libcamera-jpg to capture an image.
 def capture_image_with_libcamera():
     try:
-        cmd = ["libcamera-jpg", "-o", CAPTURED_IMAGE_PATH, "--timeout", "1000"]
+        cmd = ["libcamera-jpeg", "-o", CAPTURED_IMAGE_PATH, "--timeout", "1000"]
         subprocess.run(cmd, check=True)
         print("Image captured using libcamera-jpg.")
         return True
@@ -63,10 +62,10 @@ def capture_image_with_libcamera():
         return False
 
 
-""" def send_command(command):
-
-Sends a command to the robot via serial.
-
+def send_command(command):
+    """
+    Sends a command to the robot via serial.
+    """
     try:
         ser = serial.Serial("/dev/ttyUSB0", 115200, timeout=1)  # Adjust port as needed.
         ser.flush()
@@ -78,13 +77,13 @@ Sends a command to the robot via serial.
         ser.close()
     except serial.SerialException as e:
         print(f"Serial error: {e}")
- """
 
-""" def capture_and_check():
 
+def capture_and_check():
+    """
     Captures an image using libcamera-jpg and runs inference using the local YOLO ONNX model.
     Returns True if the detected face is "Bullseye" (i.e. a valid face), otherwise False.
-
+    """
     if not capture_image_with_libcamera():
         return False
 
@@ -130,18 +129,18 @@ Sends a command to the robot via serial.
                         detected_character = key
                         break
     print("Detected character:", detected_character)
-    return detected_character == "Bullseye" """
+    return detected_character == "Bullseye"
 
 
-""" def check_block_faces():
-
+def check_block_faces():
+    """
     Checks each of the 4 faces of a square object.
     For each face:
       1. The robot moves forward to approach the current face.
       2. It captures an image using libcamera-jpg and runs inference to check if the face is valid.
       3. If not valid, it performs a repositioning sequence to face the next side.
          The repositioning sequence is: turn left, move straight, turn right, then turn right again.
-
+    """
     valid_face_found = False
 
     for face in range(4):
@@ -169,16 +168,11 @@ Sends a command to the robot via serial.
 
     if not valid_face_found:
         print("No valid face found on any side.")
-    return valid_face_found """
+    return valid_face_found
 
 
 if __name__ == "__main__":
-    try:
-        capture_and_check()
-    except Exception:
-        print("didnt work")
-
-    # if check_block_faces():
-    #    print("Robot has found a valid face. Stopping further movements.")
-    # else:
-    #    print("Robot did not find a valid face.")
+    if check_block_faces():
+        print("Robot has found a valid face. Stopping further movements.")
+    else:
+        print("Robot did not find a valid face.")
