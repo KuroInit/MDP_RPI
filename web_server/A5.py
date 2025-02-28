@@ -84,7 +84,7 @@ def send_command(command):
 def capture_and_check():
     """
     Captures an image using libcamera-jpeg and runs inference using the local YOLO ONNX model.
-    Returns True if the detected face is "Bullseye" (i.e. a valid face), otherwise False.
+    Returns True if the detected face is valid (i.e. not "Bullseye"), otherwise False.
     """
     if not capture_image_with_libcamera_jpeg():
         return False
@@ -126,7 +126,8 @@ def capture_and_check():
                         detected_character = key
                         break
     print("Detected character:", detected_character)
-    return detected_character == "Bullseye"
+    # Valid face is any face that is not "Bullseye"
+    return detected_character != "Bullseye"
 
 
 def check_block_faces():
