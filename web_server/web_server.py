@@ -325,7 +325,7 @@ def run_task1(result: dict):
                     logger.info(
                         f"Sent command: {parsed_command}, STM response: {response}"
                     )
-                    if "ACK" in response:
+                    if "A" in response:
                         ack_received = True
                     else:
                         logger.info("ACK not received yet; waiting...")
