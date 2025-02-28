@@ -4,6 +4,8 @@ import numpy as np
 import subprocess
 from ultralytics import YOLO
 from PIL import Image  # Use Pillow to load images
+import onnx
+import onnxruntime
 
 # Mapping of detection names to numeric values.
 NAME_TO_CHARACTER = {
@@ -42,7 +44,7 @@ NAME_TO_CHARACTER = {
 }
 
 # Load the YOLO ONNX model locally.
-MODEL_PATH = "/utils/trained_models/v8_white_bg.onnx"
+MODEL_PATH = "utils/trained_models/v8_white_bg.onnx"
 model = YOLO(MODEL_PATH)
 
 # Path to temporarily store captured image.
@@ -135,7 +137,7 @@ def check_block_faces():
 
     for face in range(4):
         print(f"\nChecking face {face + 1}...")
-        send_command("SF010:")  # Move forward 10 cm.
+        send_command("SF010")  # Move forward 10 cm.
         time.sleep(1)
 
         if capture_and_check():
@@ -144,13 +146,13 @@ def check_block_faces():
             break
         else:
             print(f"Face {face + 1} is not valid.")
-            send_command("RL090:")  # Turn left.
+            send_command("RL090")  # Turn left.
             time.sleep(1)
-            send_command("SF010:")  # Move straight.
+            send_command("SF010")  # Move straight.
             time.sleep(1)
-            send_command("RF090:")  # Turn right.
+            send_command("RF090")  # Turn right.
             time.sleep(1)
-            send_command("RF090:")  # Turn right again.
+            send_command("RF090")  # Turn right again.
             time.sleep(1)
 
     if not valid_face_found:
