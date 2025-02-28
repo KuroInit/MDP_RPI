@@ -67,15 +67,25 @@ def capture_image_with_libcamera_jpeg():
 def send_command(command):
     """
     Sends a command to the robot via serial.
+    The function blocks and does not return until an "A" is received as the final response.
     """
     try:
         ser = serial.Serial("/dev/ttyUSB0", 115200, timeout=1)  # Adjust port as needed.
         ser.flush()
+
+        # Send the command to the robot.
         ser.write(command.encode())
         print(f"Sent: {command}")
-        time.sleep(0.1)
-        response = ser.readline().decode("utf-8").strip()
-        print(f"Received: {response}")
+
+        # Keep reading responses until we get an "A".
+        while True:
+            response = ser.readline().decode("utf-8").strip()
+            if response == "A":
+                print("Received final handshake 'A'.")
+                break
+            elif response:
+                print(f"Ignored response: {response}")
+
         ser.close()
     except serial.SerialException as e:
         print(f"Serial error: {e}")
@@ -148,13 +158,15 @@ def check_block_faces():
         else:
             print(f"Face {face + 1} is not valid.")
             send_command("RL090")  # Turn left.
-            time.sleep(1)
+            time.sleep(2)
             send_command("SF010")  # Move straight.
-            time.sleep(1)
+            time.sleep(2)
             send_command("RF090")  # Turn right.
-            time.sleep(1)
+            time.sleep(2)
+            send_command("SF010")  # Move straight.
+            time.sleep(2)
             send_command("RF090")  # Turn right again.
-            time.sleep(1)
+            time.sleep(2)
 
     if not valid_face_found:
         print("No valid face found on any side.")
