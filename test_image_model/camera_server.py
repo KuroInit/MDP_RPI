@@ -6,7 +6,7 @@ import numpy as np
 from flask import Flask, jsonify, request
 
 try:
-    from picamera import PiCamera
+    from picamera2 import PiCamera2
     picamera_available = True
 except ImportError:
     picamera_available = False
@@ -41,7 +41,7 @@ app = Flask(__name__)
 def capture_and_detect():
     try:
         if picamera_available:
-            camera = PiCamera()
+            camera = PiCamera2()
             camera.resolution = (640, 480)
             time.sleep(2)
         else:
@@ -96,7 +96,7 @@ def capture_and_detect():
             camera.close()
         else:
             camera.release()
-            
+
         response = {
             "result_id": best_result_charactor,
             "probability": best_conf,
