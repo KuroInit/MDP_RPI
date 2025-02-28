@@ -18,14 +18,11 @@ def send_command(command):
         print(f"Serial error: {e}")
 
 if __name__ == "__main__":
-    commands = [
-        "SF090",  # Move forward 90cm
-        "SF060",  # Move forward 60cm
-        "RB090",  # Backward right 90 degrees
-        "SB050",  # Move backward 50cm
-        "RB090"   # Backward right 90 degrees
-    ]
-    
-    for cmd in commands:
-        send_command(cmd)
-        time.sleep(1)  # Wait before sending the next command
+    while True:
+        cmd = input("Enter movement command (or 'exit' to quit): ").strip().upper()
+        if cmd == "EXIT":
+            break
+        if len(cmd) == 5:
+            send_command(cmd)
+        else:
+            print("Invalid command. Please enter a 5-character command.")
