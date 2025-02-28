@@ -217,13 +217,30 @@ def handle_move(parts, logger):
     if len(parts) < 2:
         logger.error(f"MOVE message missing parameters: {parts}")
         return
-    # Extract the letter from the MOVE command.
-    letter = parts[1].strip()
-    logger.info(f"Received MOVE command, sending letter: {letter} to STM")
+
+    # Extract the direction from the MOVE command and normalize to lowercase.
+    direction = parts[1].strip().lower()
+
+    # Map the received direction to the corresponding STM command.
+    command_map = {
+        "f": "FW00",
+        "r": "BW00",
+        "fl": "FL00",
+        "fr": "FR00",
+        "bl": "BL00",
+        "br": "BR00",
+    }
+
+    if direction not in command_map:
+        logger.error(f"Invalid MOVE direction: {direction}")
+        return
+
+    command_to_send = command_map[direction]
+    logger.info(f"Received MOVE command, sending command: {command_to_send} to STM")
     try:
-        send_to_stm(letter)
+        send_to_stm(command_to_send)
     except Exception as e:
-        logger.error(f"movement command to STM error")
+        logger.error(f"movement command to STM error: {e}")
 
 
 def send_obstacle_data(logger):
