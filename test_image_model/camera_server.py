@@ -72,10 +72,21 @@ app = Flask(__name__)
 @app.route("/capture", methods=["GET"])
 def capture_and_detect():
     try:
+        # We'll use a local flag to determine which camera method to use.
+        use_picamera = False
+
         if picamera_available:
-            camera = PiCamera2()
-            camera.resolution = (640, 480)
-            time.sleep(2)
+            try:
+                camera = PiCamera2()
+                camera.resolution = (640, 480)
+                time.sleep(2)  # Allow the camera to warm up
+                use_picamera = True
+            except Exception as e:
+                app.logger.error(f"PiCamera initialization failed: {e}")
+                # Fallback to OpenCV's VideoCapture if PiCamera fails
+                camera = cv2.VideoCapture(0)
+                if not camera.isOpened():
+                    return jsonify({"error": "Camera Error: Cannot access camera"}), 500
         else:
             camera = cv2.VideoCapture(0)
             if not camera.isOpened():
@@ -87,7 +98,8 @@ def capture_and_detect():
         best_result_charactor = "NA"  # Initialize with default value
 
         for i in range(10):
-            if picamera_available:
+            # Capture frame using the selected method.
+            if use_picamera:
                 frame = np.empty((480, 640, 3), dtype=np.uint8)
                 camera.capture(frame, "bgr")
             else:
@@ -118,18 +130,20 @@ def capture_and_detect():
 
             time.sleep(0.1)
 
+        # Save the output image.
         if best_result is not None:
             annotated_frame = best_result.plot()
             cv2.imwrite(OUTPUT_IMAGE_PATH, annotated_frame)
         else:
-            if not picamera_available:
+            if not use_picamera:
                 cv2.imwrite(OUTPUT_IMAGE_PATH, frame)
             else:
                 frame = np.empty((480, 640, 3), dtype=np.uint8)
                 camera.capture(frame, "bgr")
                 cv2.imwrite(OUTPUT_IMAGE_PATH, frame)
 
-        if picamera_available:
+        # Close the camera appropriately.
+        if use_picamera:
             camera.close()
         else:
             camera.release()
