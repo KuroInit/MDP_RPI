@@ -42,7 +42,7 @@ NAME_TO_CHARACTER = {
 }
 
 # Load the YOLO ONNX model locally.
-MODEL_PATH = "/web_server/utils/trained_models/v8_white_bg.onnx"
+MODEL_PATH = "/utils/trained_models/v8_white_bg.onnx"
 model = YOLO(MODEL_PATH)
 
 # Path to temporarily store captured image.
