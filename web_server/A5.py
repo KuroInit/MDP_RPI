@@ -1,6 +1,57 @@
 import serial
 import time
-import requests
+import cv2
+import numpy as np
+from ultralytics import YOLO
+
+# Mapping of detection names to numeric values.
+NAME_TO_CHARACTER = {
+    "NA": "NA",
+    "Bullseye": 30,
+    "One": 0,
+    "Two": 1,
+    "Three": 2,
+    "Four": 3,
+    "Five": 4,
+    "Six": 5,
+    "Seven": 6,
+    "Eight": 7,
+    "Nine": 8,
+    "A": 9,
+    "B": 10,
+    "C": 11,
+    "D": 12,
+    "E": 13,
+    "F": 14,
+    "G": 15,
+    "H": 16,
+    "S": 17,
+    "T": 18,
+    "U": 19,
+    "V": 20,
+    "W": 21,
+    "X": 22,
+    "Y": 23,
+    "Z": 24,
+    "Up": 25,
+    "Down": 26,
+    "Right": 27,
+    "Left": 28,
+    "Stop": 29,
+}
+
+# Load the YOLO ONNX model locally.
+# Update the model path as needed.
+MODEL_PATH = "path/to/your/model.onnx"
+model = YOLO(MODEL_PATH)
+
+# Flag to indicate if PiCamera2 is available.
+try:
+    from picamera2 import PiCamera2
+
+    picamera_available = True
+except ImportError:
+    picamera_available = False
 
 
 def send_command(command):
@@ -8,13 +59,11 @@ def send_command(command):
     Sends a command to the robot via serial.
     """
     try:
-        ser = serial.Serial(
-            "/dev/ttyUSB0", 115200, timeout=1
-        )  # Adjust the port as needed.
+        ser = serial.Serial("/dev/ttyUSB0", 115200, timeout=1)  # Adjust port as needed.
         ser.flush()
-        ser.write(command.encode())  # Send the command.
+        ser.write(command.encode())
         print(f"Sent: {command}")
-        time.sleep(0.1)  # Allow processing time.
+        time.sleep(0.1)
         response = ser.readline().decode("utf-8").strip()
         print(f"Received: {response}")
         ser.close()
@@ -24,83 +73,86 @@ def send_command(command):
 
 def capture_and_check():
     """
-    Captures an image via a remote server (which runs YOLO ONNX inference)
-    and checks if the detected character is "Bullseye" (mapped to 30).
-    Returns True if a valid face is detected, otherwise False.
+    Captures an image locally and runs inference using the local YOLO ONNX model.
+    Returns True if the detected face is "Bullseye" (i.e. a valid face), otherwise False.
     """
-    server_url = (
-        "http://<Server IP>:5000/capture"  # Replace <Server IP> with your server's IP.
-    )
-    try:
-        response = requests.get(server_url, timeout=5)
-        data = response.json()
-        print("Result from server:", data)
-        # The server is assumed to return a JSON with key "result_id".
-        detected_character = data.get("result_id", "NA")
-
-        # Mapping of names to numeric values.
-        NAME_TO_CHARACTER = {
-            "NA": "NA",
-            "Bullseye": 30,
-            "One": 0,
-            "Two": 1,
-            "Three": 2,
-            "Four": 3,
-            "Five": 4,
-            "Six": 5,
-            "Seven": 6,
-            "Eight": 7,
-            "Nine": 8,
-            "A": 9,
-            "B": 10,
-            "C": 11,
-            "D": 12,
-            "E": 13,
-            "F": 14,
-            "G": 15,
-            "H": 16,
-            "S": 17,
-            "T": 18,
-            "U": 19,
-            "V": 20,
-            "W": 21,
-            "X": 22,
-            "Y": 23,
-            "Z": 24,
-            "Up": 25,
-            "Down": 26,
-            "Right": 27,
-            "Left": 28,
-            "Stop": 29,
-        }
-
-        # Check if the detected face is a Bullseye.
-        if NAME_TO_CHARACTER.get(detected_character, -1) == 30:
-            return True
-        else:
+    frame = None
+    # Capture image using PiCamera2 if available; else use OpenCV.
+    if picamera_available:
+        try:
+            camera = PiCamera2()
+            camera.resolution = (640, 480)
+            time.sleep(2)  # Warm-up delay.
+            frame = np.empty((480, 640, 3), dtype=np.uint8)
+            camera.capture(frame, "bgr")
+            camera.close()
+        except Exception as e:
+            print("PiCamera2 capture error:", e)
+    else:
+        cap = cv2.VideoCapture(0)
+        ret, frame = cap.read()
+        cap.release()
+        if not ret or frame is None:
+            print("Failed to capture image from camera.")
             return False
-    except Exception as e:
-        print("Request failed:", e)
-        return False
+
+    # (Optional) Validate and adjust the image format:
+    if frame is not None:
+        if len(frame.shape) == 2:
+            print("Captured frame is grayscale; converting to BGR.")
+            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+        elif len(frame.shape) == 3:
+            if frame.shape[2] == 4:
+                print("Captured frame has 4 channels; converting to BGR.")
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
+            elif frame.shape[2] != 3:
+                print(
+                    f"Captured frame has {frame.shape[2]} channels; truncating to 3 channels."
+                )
+                frame = frame[:, :, :3]
+        if frame.dtype != np.uint8:
+            print(f"Captured frame has dtype {frame.dtype}; converting to uint8.")
+            frame = frame.astype(np.uint8)
+
+    # Run inference on the captured frame.
+    results = model(frame, verbose=False)
+    detected_character = "NA"
+    for result in results:
+        if (
+            result.boxes is not None
+            and result.boxes.conf is not None
+            and len(result.boxes.conf) > 0
+        ):
+            conf_tensor = result.boxes.conf
+            max_conf = float(conf_tensor.max())
+            idx = int(conf_tensor.argmax())
+            if max_conf >= 0.5:  # Confidence threshold; adjust as needed.
+                best_result_id = int(result.boxes.cls[idx])
+                # Map the detected numeric id back to a name.
+                for key, val in NAME_TO_CHARACTER.items():
+                    if val == best_result_id:
+                        detected_character = key
+                        break
+    print("Detected character:", detected_character)
+    return detected_character == "Bullseye"
 
 
 def check_block_faces():
     """
-    Checks each of the 4 faces of a block.
-    For each face:
-      - The robot moves forward to approach the face.
-      - The robot checks if the face is valid.
-      - If not, it rotates 90° to check the next face.
+    Checks each of the 4 faces of a block:
+      1. Moves forward to approach the current face.
+      2. Captures an image locally and runs inference to check if the face is valid.
+      3. If not valid, rotates 90° to check the next face.
     """
     valid_face_found = False
 
     for face in range(4):
         print(f"\nChecking face {face + 1}...")
-        # Move forward 10 cm to check the current face.
+        # Move forward 10 cm to approach the current face.
         send_command("SF010:")
-        time.sleep(1)  # Wait for movement completion and image capture.
+        time.sleep(1)  # Wait for movement to complete.
 
-        # Capture image and check if the current face is valid.
+        # Capture image locally and check face validity.
         if capture_and_check():
             print(f"Valid face found on face {face + 1}.")
             valid_face_found = True
@@ -117,7 +169,6 @@ def check_block_faces():
 
 
 if __name__ == "__main__":
-    # Run the routine to check block faces.
     if check_block_faces():
         print("Robot has found a valid face. Stopping further movements.")
     else:
