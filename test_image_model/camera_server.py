@@ -23,9 +23,9 @@ NAME_TO_CHARACTOR = {
 
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(CURRENT_DIR, '..', 'web_server', 'utils', 'trained_models', 'v8_white_bg.onnx')
-OUTPUT_DIR = os.path.join(CURRENT_DIR, 'static')
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-OUTPUT_IMAGE_PATH = os.path.join(OUTPUT_DIR, 'result.jpg')
+
+# Save the output image in the current working directory
+OUTPUT_IMAGE_PATH = os.path.join(os.getcwd(), 'result.jpg')
 
 try:
     model = YOLO(MODEL_PATH)
