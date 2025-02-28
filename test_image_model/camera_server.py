@@ -106,11 +106,14 @@ def capture_and_detect():
             else:
                 ret, frame = camera.read()
                 if not ret or frame is None:
+                    app.logger.warning(
+                        "Failed to capture frame from camera. Skipping iteration."
+                    )
                     continue
 
-            # Validate image format:
+            # Validate and adjust image format:
             if frame is not None:
-                # Check if grayscale; if so, convert to BGR.
+                # Check if the frame is grayscale; if so, convert to BGR.
                 if len(frame.shape) == 2:
                     app.logger.warning(
                         "Captured frame is grayscale. Converting to BGR."
@@ -133,9 +136,17 @@ def capture_and_detect():
                     )
                     frame = frame.astype(np.uint8)
 
-            # Save the current frame so we can use it if no detection is found.
+            # Ensure the frame is valid (non-empty).
+            if frame is None or frame.size == 0:
+                app.logger.error(
+                    "Captured frame is empty or invalid. Skipping iteration."
+                )
+                continue
+
+            # Save the current valid frame.
             last_frame = frame
 
+            # Now pass the valid frame to the model.
             results = model(frame, verbose=False)
 
             for result in results:
@@ -159,7 +170,7 @@ def capture_and_detect():
 
             time.sleep(0.1)
 
-        # If no valid frame was captured, return an error.
+        # If no valid frame was captured during the iterations, return an error.
         if last_frame is None:
             if use_picamera:
                 camera.close()
