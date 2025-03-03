@@ -44,14 +44,14 @@ def commandGenerator(states, obstacles):
         if states[i].direction == states[i - 1].direction:
             # Forward - Must be (east facing AND x value increased) OR (north facing AND y value increased)
             if (states[i].x > states[i - 1].x and states[i].direction == Direction.EAST) or (states[i].y > states[i - 1].y and states[i].direction == Direction.NORTH):
-                commands.append("FW10")
+                commands.append("SF010")
             # Forward - Must be (west facing AND x value decreased) OR (south facing AND y value decreased)
             elif (states[i].x < states[i-1].x and states[i].direction == Direction.WEST) or (
                     states[i].y < states[i-1].y and states[i].direction == Direction.SOUTH):
-                commands.append("FW10")
+                commands.append("SF010")
             # Backward - All other cases where the previous and current state is the same direction
             else:
-                commands.append("BW10")
+                commands.append("SB010")
 
             # If any of these states has a valid screenshot ID, then add a SNAP command as well to take a picture
             if states[i].screenshot_id != -1:
@@ -121,61 +121,61 @@ def commandGenerator(states, obstacles):
             if states[i].direction == Direction.EAST:
                 # y value increased -> Forward Right
                 if states[i].y > states[i - 1].y:
-                    commands.append("FR{}".format(steps))
+                    commands.append("RF{}".format(steps))
                 # y value decreased -> Backward Left
                 else:
-                    commands.append("BL{}".format(steps))
+                    commands.append("LB{}".format(steps))
             # Facing west afterwards
             elif states[i].direction == Direction.WEST:
                 # y value increased -> Forward Left
                 if states[i].y > states[i - 1].y:
-                    commands.append("FL{}".format(steps))
+                    commands.append("LF{}".format(steps))
                 # y value decreased -> Backward Right
                 else:
-                    commands.append("BR{}".format(steps))
+                    commands.append("RB{}".format(steps))
             else:
                 raise Exception("Invalid turing direction")
 
         elif states[i - 1].direction == Direction.EAST:
             if states[i].direction == Direction.NORTH:
                 if states[i].y > states[i - 1].y:
-                    commands.append("FL{}".format(steps))
+                    commands.append("LF{}".format(steps))
                 else:
-                    commands.append("BR{}".format(steps))
+                    commands.append("RB{}".format(steps))
 
             elif states[i].direction == Direction.SOUTH:
                 if states[i].y > states[i - 1].y:
-                    commands.append("BL{}".format(steps))
+                    commands.append("LB{}".format(steps))
                 else:
-                    commands.append("FR{}".format(steps))
+                    commands.append("RF{}".format(steps))
             else:
                 raise Exception("Invalid turing direction")
 
         elif states[i - 1].direction == Direction.SOUTH:
             if states[i].direction == Direction.EAST:
                 if states[i].y > states[i - 1].y:
-                    commands.append("BR{}".format(steps))
+                    commands.append("RB{}".format(steps))
                 else:
-                    commands.append("FL{}".format(steps))
+                    commands.append("LF{}".format(steps))
             elif states[i].direction == Direction.WEST:
                 if states[i].y > states[i - 1].y:
-                    commands.append("BL{}".format(steps))
+                    commands.append("LB{}".format(steps))
                 else:
-                    commands.append("FR{}".format(steps))
+                    commands.append("RF{}".format(steps))
             else:
                 raise Exception("Invalid turing direction")
 
         elif states[i - 1].direction == Direction.WEST:
             if states[i].direction == Direction.NORTH:
                 if states[i].y > states[i - 1].y:
-                    commands.append("FR{}".format(steps))
+                    commands.append("RF{}".format(steps))
                 else:
-                    commands.append("BL{}".format(steps))
+                    commands.append("LB{}".format(steps))
             elif states[i].direction == Direction.SOUTH:
                 if states[i].y > states[i - 1].y:
-                    commands.append("BR{}".format(steps))
+                    commands.append("RB{}".format(steps))
                 else:
-                    commands.append("FL{}".format(steps))
+                    commands.append("LF{}".format(steps))
             else:
                 raise Exception("Invalid turing direction")
         else:
@@ -243,21 +243,21 @@ def commandGenerator(states, obstacles):
 
     for i in range(1, len(commands)):
         # If both commands are BW
-        if commands[i].startswith("BW") and compressed_commands[-1].startswith("BW"):
+        if commands[i].startswith("SB") and compressed_commands[-1].startswith("SB"):
             # Get the number of steps of previous command
             steps = int(compressed_commands[-1][2:])
             # If steps are not 90, add 10 to the steps
             if steps != 90:
-                compressed_commands[-1] = "BW{}".format(steps + 10)
+                compressed_commands[-1] = "SB{}".format(steps + 10)
                 continue
 
         # If both commands are FW
-        elif commands[i].startswith("FW") and compressed_commands[-1].startswith("FW"):
+        elif commands[i].startswith("SF") and compressed_commands[-1].startswith("SF"):
             # Get the number of steps of previous command
             steps = int(compressed_commands[-1][2:])
             # If steps are not 90, add 10 to the steps
             if steps != 90:
-                compressed_commands[-1] = "FW{}".format(steps + 10)
+                compressed_commands[-1] = "SF{}".format(steps + 10)
                 continue
         
         # Otherwise, just add as usual
