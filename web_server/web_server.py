@@ -146,7 +146,7 @@ async def pathFinding(request: PathFindingRequest, background_tasks: BackgroundT
     for command in commands:
         if command.startswith(("SNAP", "FIN")):
             continue
-        elif command.startswith(("FW", "FS", "BW", "BS")):
+        elif command.startswith(("SF", "SB")):
             i += int(command[2:]) // 10
         else:
             i += 1
