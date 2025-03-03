@@ -358,4 +358,4 @@ def run_task1(result: dict):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="localhost", port=8000)  # Change back to 0.0.0.0
+    uvicorn.run(app, host="0.0.0.0", port=8000)
