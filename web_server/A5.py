@@ -165,7 +165,7 @@ def check_block_faces():
             time.sleep(2)
             send_command("SF010")  # Move straight.
             time.sleep(2)
-            send_command("RF090")  # Turn right again.
+            send_command("LB090")  # Turn right again.
             time.sleep(2)
 
     if not valid_face_found:
