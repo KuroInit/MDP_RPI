@@ -22,10 +22,11 @@ def init_serial(port="/dev/ttyUSB0", baudrate=115200, timeout=1):
 def notify_bluetooth(command: str):
     bt_socket_path = "/tmp/bt_ipc.sock"
     prefix = command[:2].upper()
-    if prefix in ["FW", "FR", "FL", "BW", "BR", "BL"]:
-        notification = f"MOVE,{prefix}"
-    else:
-        notification = f"NOTIFY_CMD:{command}"
+    notification = (
+        f"MOVE,{prefix}"
+        if prefix in ["FW", "FR", "FL", "BW", "BR", "BL"]
+        else f"NOTIFY_CMD:{command}"
+    )
 
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     try:
@@ -43,8 +44,6 @@ def send_command(ser, command):
     try:
         ser.write((command).encode())
         logger.info(f"SERIAL: Sent command: {command}")
-        # Notify the Bluetooth service every time a command is sent
-        notify_bluetooth(command)
     except Exception as e:
         logger.error(f"Error sending command: {e}")
 
@@ -53,8 +52,7 @@ def send_path(ser, path):
     try:
         ser.write("START_PATH\n".encode("utf-8"))
         for waypoint in path:
-            line = f"{waypoint[0]},{waypoint[1]}\n"
-            ser.write(line.encode("utf-8"))
+            ser.write(f"{waypoint[0]},{waypoint[1]}\n".encode("utf-8"))
         ser.write("END_PATH\n".encode("utf-8"))
         logger.info(f"Sent path: {path}")
     except Exception as e:
@@ -72,7 +70,6 @@ def read_response(ser):
 
 
 def start_ipc_server(ser, socket_path="/tmp/stm_ipc.sock"):
-    # Remove the existing socket file if it exists.
     if os.path.exists(socket_path):
         os.remove(socket_path)
     server_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -88,29 +85,38 @@ def start_ipc_server(ser, socket_path="/tmp/stm_ipc.sock"):
                 command = data.decode("utf-8").strip()
                 logger.info("Received command via IPC: " + command)
 
-                # If the command is "FIN", return to wait state
                 if command.upper() == "FIN":
                     logger.info("Received FIN command. Returning to wait state.")
                     conn.send(b"OK: FIN received, returning to wait state")
-                    continue  # Do not send FIN to the STM, just acknowledge and wait.
+                    continue
 
-                # Send the command over the serial interface
                 send_command(ser, command)
 
-                # Optionally, read a response from the STM and send an acknowledgment
-                response = read_response(ser)
+                ack_received = False
+                response = ""
+                while not ack_received:
+                    response = read_response(ser)
+                    if response and "A" in response:
+                        ack_received = True
+                        logger.info(f"ACK received from STM for command: {command}")
+                    else:
+                        logger.info("Waiting for ACK from STM...")
+                        time.sleep(0.5)
+
+                notify_bluetooth(command)
                 conn.send(
                     ("OK: " + (response if response else "No response")).encode("utf-8")
                 )
+
             else:
                 logger.warning("No data received on IPC connection.")
+
         except Exception as e:
             logger.error("Error handling IPC connection: " + str(e))
         finally:
             conn.close()
 
 
-# update
 if __name__ == "__main__":
     ser = init_serial()
     if ser:
