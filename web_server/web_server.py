@@ -332,24 +332,24 @@ def run_task1(result: dict):
                     logger.error(f"Error sending command {command}: {e}")
                     time.sleep(1)  # Wait before retrying on error
 
-        # If there is another command to send, send the "ST00" command first and wait for ACK.
-        if i < len(commands) - 1:
-            ack_received = False
-            while not ack_received:
-                try:
-                    response = send_command_to_stm("ST00")
-                    logger.info(f"Sent command: ST00, STM response: {response}")
-                    if "A" in response:
-                        ack_received = True
-                    else:
-                        logger.info("ACK not received for ST00; waiting...")
-                        time.sleep(1)
-                except Exception as e:
-                    logger.error(f"Error sending command ST00: {e}")
-                    time.sleep(1)
+        # # If there is another command to send, send the "ST00" command first and wait for ACK.
+        # if i < len(commands) - 1:
+        #     ack_received = False
+        #     while not ack_received:
+        #         try:
+        #             response = send_command_to_stm("ST00")
+        #             logger.info(f"Sent command: ST00, STM response: {response}")
+        #             if "A" in response:
+        #                 ack_received = True
+        #             else:
+        #                 logger.info("ACK not received for ST00; waiting...")
+        #                 time.sleep(1)
+        #         except Exception as e:
+        #             logger.error(f"Error sending command ST00: {e}")
+        #             time.sleep(1)
 
         # Delay between commands; adjust as needed based on robot response time.
-        time.sleep(1)
+        #time.sleep(1)
     logger.info("Task1 execution complete")
 
 
