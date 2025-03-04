@@ -243,66 +243,66 @@ def snap_handler(command: str):
 #     "BR00:" -> "RB090:" (Backward right with default angle 90°)
 #      "BL00:" -> "LB090:" (Backward left with default angle 90°)
 
-    # Remove trailing colon if present and strip spaces.
-    # command = command.strip()
-    # if command.endswith(":"):
-    #     command = command[:-1]
-    # cmd_upper = command.upper()
+# Remove trailing colon if present and strip spaces.
+# command = command.strip()
+# if command.endswith(":"):
+#     command = command[:-1]
+# cmd_upper = command.upper()
 
-    # # SNAP commands are handled separately.
-    # if cmd_upper.startswith("SNAP"):
-    #     return command + ":"
+# # SNAP commands are handled separately.
+# if cmd_upper.startswith("SNAP"):
+#     return command + ":"
 
-    # # For movement commands, extract the numeric part.
-    # if cmd_upper.startswith("FW"):
-    #     # Forward -> SF
-    #     distance = "".join(filter(str.isdigit, command[2:]))
-    #     if not distance:
-    #         distance = "0"
-    #     distance = distance.zfill(3)
-    #     return f"SF{distance}:"
-    # elif cmd_upper.startswith("BW"):
-    #     # Backward -> SB
-    #     distance = "".join(filter(str.isdigit, command[2:]))
-    #     if not distance:
-    #         distance = "0"
-    #     distance = distance.zfill(3)
-    #     return f"SB{distance}:"
-    # elif cmd_upper.startswith("FR"):
-    #     # Forward right -> RF; if no numeric, default to 090.
-    #     angle = "".join(filter(str.isdigit, command[2:]))
-    #     if not angle:
-    #         angle = "090"
-    #     else:
-    #         angle = angle.zfill(3)
-    #     return f"RF{angle}:"
-    # elif cmd_upper.startswith("FL"):
-    #     # Forward left -> RL; default angle 090.
-    #     angle = "".join(filter(str.isdigit, command[2:]))
-    #     if not angle:
-    #         angle = "090"
-    #     else:
-    #         angle = angle.zfill(3)
-    #     return f"RL{angle}:"
-    # elif cmd_upper.startswith("BR"):
-    #     # Backward right -> RB; default angle 090.
-    #     angle = "".join(filter(str.isdigit, command[2:]))
-    #     if not angle:
-    #         angle = "090"
-    #     else:
-    #         angle = angle.zfill(3)
-    #     return f"RB{angle}:"
-    # elif cmd_upper.startswith("BL"):
-    #     # Backward left -> LB; default angle 090.
-    #     angle = "".join(filter(str.isdigit, command[2:]))
-    #     if not angle:
-    #         angle = "090"
-    #     else:
-    #         angle = angle.zfill(3)
-    #     return f"LB{angle}:"
-    # else:
-    #     # If command is unknown, return it with a trailing colon.
-    #     return command + ":"
+# # For movement commands, extract the numeric part.
+# if cmd_upper.startswith("FW"):
+#     # Forward -> SF
+#     distance = "".join(filter(str.isdigit, command[2:]))
+#     if not distance:
+#         distance = "0"
+#     distance = distance.zfill(3)
+#     return f"SF{distance}:"
+# elif cmd_upper.startswith("BW"):
+#     # Backward -> SB
+#     distance = "".join(filter(str.isdigit, command[2:]))
+#     if not distance:
+#         distance = "0"
+#     distance = distance.zfill(3)
+#     return f"SB{distance}:"
+# elif cmd_upper.startswith("FR"):
+#     # Forward right -> RF; if no numeric, default to 090.
+#     angle = "".join(filter(str.isdigit, command[2:]))
+#     if not angle:
+#         angle = "090"
+#     else:
+#         angle = angle.zfill(3)
+#     return f"RF{angle}:"
+# elif cmd_upper.startswith("FL"):
+#     # Forward left -> RL; default angle 090.
+#     angle = "".join(filter(str.isdigit, command[2:]))
+#     if not angle:
+#         angle = "090"
+#     else:
+#         angle = angle.zfill(3)
+#     return f"RL{angle}:"
+# elif cmd_upper.startswith("BR"):
+#     # Backward right -> RB; default angle 090.
+#     angle = "".join(filter(str.isdigit, command[2:]))
+#     if not angle:
+#         angle = "090"
+#     else:
+#         angle = angle.zfill(3)
+#     return f"RB{angle}:"
+# elif cmd_upper.startswith("BL"):
+#     # Backward left -> LB; default angle 090.
+#     angle = "".join(filter(str.isdigit, command[2:]))
+#     if not angle:
+#         angle = "090"
+#     else:
+#         angle = angle.zfill(3)
+#     return f"LB{angle}:"
+# else:
+#     # If command is unknown, return it with a trailing colon.
+#     return command + ":"
 
 
 def run_task1(result: dict):
@@ -311,8 +311,7 @@ def run_task1(result: dict):
         logger.error("No commands found in algorithm result.")
         return
 
-    for i, command in enumerate(commands):
-
+    for command in commands:
         if command.upper().startswith("SNAP"):
             snap_handler(command)
         else:
@@ -320,9 +319,7 @@ def run_task1(result: dict):
             while not ack_received:
                 try:
                     response = send_command_to_stm(command)
-                    logger.info(
-                        f"Sent command: {command}, STM response: {response}"
-                    )
+                    logger.info(f"Sent command: {command}, STM response: {response}")
                     if "A" in response:
                         ack_received = True
                     else:
@@ -332,24 +329,9 @@ def run_task1(result: dict):
                     logger.error(f"Error sending command {command}: {e}")
                     time.sleep(1)  # Wait before retrying on error
 
-        # # If there is another command to send, send the "ST00" command first and wait for ACK.
-        # if i < len(commands) - 1:
-        #     ack_received = False
-        #     while not ack_received:
-        #         try:
-        #             response = send_command_to_stm("ST00")
-        #             logger.info(f"Sent command: ST00, STM response: {response}")
-        #             if "A" in response:
-        #                 ack_received = True
-        #             else:
-        #                 logger.info("ACK not received for ST00; waiting...")
-        #                 time.sleep(1)
-        #         except Exception as e:
-        #             logger.error(f"Error sending command ST00: {e}")
-        #             time.sleep(1)
-
         # Delay between commands; adjust as needed based on robot response time.
-        #time.sleep(1)
+        time.sleep(1)
+
     logger.info("Task1 execution complete")
 
 
