@@ -83,7 +83,7 @@ MODEL_PATH = os.path.join(os.getcwd(), "web_server", "utils", "trained_models", 
 try:
     model = YOLO(MODEL_PATH)
 except Exception as e:
-    app.logger.error(f"Loading Model Failed: {e}")
+    logger.error(f"Loading Model Failed: {e}")
     model = None
 
 
