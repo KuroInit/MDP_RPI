@@ -1,13 +1,14 @@
 [Unit]
-Description= STM communation Service
+Description=STM Communication Service
 After=network.target
 
 [Service]
+WorkingDirectory=/home/mdp23/MDP_RPI
 ExecStart=/home/mdp23/MDP_RPI/.venv/bin/python /home/mdp23/MDP_RPI/stm_comm/serial_comm.py
 Restart=always
 User=pi
 Environment=PYTHONUNBUFFERED=1
+Environment=PYTHONPATH=/home/mdp23/MDP_RPI
 
 [Install]
 WantedBy=multi-user.target
-
