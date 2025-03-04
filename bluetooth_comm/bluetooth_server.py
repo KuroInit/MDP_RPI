@@ -314,8 +314,8 @@ def handle_cmd(parts, logger, client_sock):
             logger.error("CMD,sendArena missing JSON data.")
             return
         try:
-            # Load the JSON data from the third part
-            arena_data = json.loads(parts[2])
+            json_data_str = ",".join(parts[2:])  # Join everything after 'sendArena'
+            arena_data = json.loads(json_data_str)
 
             # Validate that required keys exist
             required_keys = ["robot_x", "robot_y", "robot_dir", "obstacles"]
