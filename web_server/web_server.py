@@ -232,77 +232,77 @@ def snap_handler(command: str):
     return result
 
 
-def parse_command(command: str) -> str:
-    """
-    Parses a command string into the proper format for the STM.
-    Example:
-      "FW10:" -> "SF010:" (Forward 10cm)
-      "BW10:" -> "SB010:" (Backward 10cm)
-      "FR00:" -> "RF090:" (Forward right with default angle 90°)
-      "FL00:" -> "RL090:" (Forward left with default angle 90°)
-      "BR00:" -> "RB090:" (Backward right with default angle 90°)
-      "BL00:" -> "LB090:" (Backward left with default angle 90°)
-    """
+# def parse_command(command: str) -> str:
+#    """
+#    Parses a command string into the proper format for the STM.
+#    Example:
+#      "FW10:" -> "SF010:" (Forward 10cm)
+#      "BW10:" -> "SB010:" (Backward 10cm)
+#      "FR00:" -> "RF090:" (Forward right with default angle 90°)
+#     "FL00:" -> "RL090:" (Forward left with default angle 90°)
+#     "BR00:" -> "RB090:" (Backward right with default angle 90°)
+#      "BL00:" -> "LB090:" (Backward left with default angle 90°)
+
     # Remove trailing colon if present and strip spaces.
-    command = command.strip()
-    if command.endswith(":"):
-        command = command[:-1]
-    cmd_upper = command.upper()
+    # command = command.strip()
+    # if command.endswith(":"):
+    #     command = command[:-1]
+    # cmd_upper = command.upper()
 
-    # SNAP commands are handled separately.
-    if cmd_upper.startswith("SNAP"):
-        return command + ":"
+    # # SNAP commands are handled separately.
+    # if cmd_upper.startswith("SNAP"):
+    #     return command + ":"
 
-    # For movement commands, extract the numeric part.
-    if cmd_upper.startswith("FW"):
-        # Forward -> SF
-        distance = "".join(filter(str.isdigit, command[2:]))
-        if not distance:
-            distance = "0"
-        distance = distance.zfill(3)
-        return f"SF{distance}:"
-    elif cmd_upper.startswith("BW"):
-        # Backward -> SB
-        distance = "".join(filter(str.isdigit, command[2:]))
-        if not distance:
-            distance = "0"
-        distance = distance.zfill(3)
-        return f"SB{distance}:"
-    elif cmd_upper.startswith("FR"):
-        # Forward right -> RF; if no numeric, default to 090.
-        angle = "".join(filter(str.isdigit, command[2:]))
-        if not angle:
-            angle = "090"
-        else:
-            angle = angle.zfill(3)
-        return f"RF{angle}:"
-    elif cmd_upper.startswith("FL"):
-        # Forward left -> RL; default angle 090.
-        angle = "".join(filter(str.isdigit, command[2:]))
-        if not angle:
-            angle = "090"
-        else:
-            angle = angle.zfill(3)
-        return f"RL{angle}:"
-    elif cmd_upper.startswith("BR"):
-        # Backward right -> RB; default angle 090.
-        angle = "".join(filter(str.isdigit, command[2:]))
-        if not angle:
-            angle = "090"
-        else:
-            angle = angle.zfill(3)
-        return f"RB{angle}:"
-    elif cmd_upper.startswith("BL"):
-        # Backward left -> LB; default angle 090.
-        angle = "".join(filter(str.isdigit, command[2:]))
-        if not angle:
-            angle = "090"
-        else:
-            angle = angle.zfill(3)
-        return f"LB{angle}:"
-    else:
-        # If command is unknown, return it with a trailing colon.
-        return command + ":"
+    # # For movement commands, extract the numeric part.
+    # if cmd_upper.startswith("FW"):
+    #     # Forward -> SF
+    #     distance = "".join(filter(str.isdigit, command[2:]))
+    #     if not distance:
+    #         distance = "0"
+    #     distance = distance.zfill(3)
+    #     return f"SF{distance}:"
+    # elif cmd_upper.startswith("BW"):
+    #     # Backward -> SB
+    #     distance = "".join(filter(str.isdigit, command[2:]))
+    #     if not distance:
+    #         distance = "0"
+    #     distance = distance.zfill(3)
+    #     return f"SB{distance}:"
+    # elif cmd_upper.startswith("FR"):
+    #     # Forward right -> RF; if no numeric, default to 090.
+    #     angle = "".join(filter(str.isdigit, command[2:]))
+    #     if not angle:
+    #         angle = "090"
+    #     else:
+    #         angle = angle.zfill(3)
+    #     return f"RF{angle}:"
+    # elif cmd_upper.startswith("FL"):
+    #     # Forward left -> RL; default angle 090.
+    #     angle = "".join(filter(str.isdigit, command[2:]))
+    #     if not angle:
+    #         angle = "090"
+    #     else:
+    #         angle = angle.zfill(3)
+    #     return f"RL{angle}:"
+    # elif cmd_upper.startswith("BR"):
+    #     # Backward right -> RB; default angle 090.
+    #     angle = "".join(filter(str.isdigit, command[2:]))
+    #     if not angle:
+    #         angle = "090"
+    #     else:
+    #         angle = angle.zfill(3)
+    #     return f"RB{angle}:"
+    # elif cmd_upper.startswith("BL"):
+    #     # Backward left -> LB; default angle 090.
+    #     angle = "".join(filter(str.isdigit, command[2:]))
+    #     if not angle:
+    #         angle = "090"
+    #     else:
+    #         angle = angle.zfill(3)
+    #     return f"LB{angle}:"
+    # else:
+    #     # If command is unknown, return it with a trailing colon.
+    #     return command + ":"
 
 
 def run_task1(result: dict):
@@ -312,18 +312,16 @@ def run_task1(result: dict):
         return
 
     for i, command in enumerate(commands):
-        # Parse the command before sending it.
-        parsed_command = parse_command(command)
 
-        if parsed_command.upper().startswith("SNAP"):
-            snap_handler(parsed_command)
+        if command.upper().startswith("SNAP"):
+            snap_handler(command)
         else:
             ack_received = False
             while not ack_received:
                 try:
-                    response = send_command_to_stm(parsed_command)
+                    response = send_command_to_stm(command)
                     logger.info(
-                        f"Sent command: {parsed_command}, STM response: {response}"
+                        f"Sent command: {command}, STM response: {response}"
                     )
                     if "A" in response:
                         ack_received = True
@@ -331,7 +329,7 @@ def run_task1(result: dict):
                         logger.info("ACK not received yet; waiting...")
                         time.sleep(1)  # Delay before checking again
                 except Exception as e:
-                    logger.error(f"Error sending command {parsed_command}: {e}")
+                    logger.error(f"Error sending command {command}: {e}")
                     time.sleep(1)  # Wait before retrying on error
 
         # If there is another command to send, send the "ST00" command first and wait for ACK.
