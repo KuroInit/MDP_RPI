@@ -196,12 +196,42 @@ def handle_status(parts, logger):
 
 
 def handle_face(parts, logger):
+    global obstacles_list
     if len(parts) < 3:
         logger.error(f"FACE message missing parameters: {parts}")
         return
-    obstacle_number = parts[1]
-    side = parts[2]
-    logger.info(f"Face update: obstacle {obstacle_number}, side {side}")
+
+    try:
+        obstacle_number = int(parts[1])  # Obstacle ID
+        new_facing = parts[2].upper()  # New direction
+    except ValueError:
+        logger.error("Invalid FACE parameters.")
+        return
+
+    if new_facing not in direction_map:
+        logger.error(f"Invalid FACE direction: {new_facing}")
+        return
+
+    new_direction = direction_map[new_facing]
+
+    # Find and update the obstacle if it exists
+    for obstacle in obstacles_list:
+        if obstacle["id"] == obstacle_number:
+            logger.info(f"Updating obstacle {obstacle_number}: New face {new_facing}")
+            # Remove the old obstacle entry
+            obstacles_list.remove(obstacle)
+            break
+
+    # Add the updated obstacle with the new face orientation
+    updated_obstacle = {
+        "x": obstacle["x"],
+        "y": obstacle["y"],
+        "id": obstacle_number,
+        "d": new_direction,
+    }
+    obstacles_list.append(updated_obstacle)
+
+    logger.info(f"Obstacle updated: {updated_obstacle}")
 
 
 def send_to_stm(letter: str, socket_path: str = STM_SOCKET_PATH):
