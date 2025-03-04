@@ -264,21 +264,6 @@ def snap_handler(command: str):
             logger.error("Failed to load captured image.")
             return
 
-        # Validate and adjust image format
-        if len(frame.shape) == 2:
-            logger.warning("Captured frame is grayscale. Converting to BGR.")
-            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
-        elif len(frame.shape) == 3:
-            if frame.shape[2] == 4:
-                logger.warning("Captured frame has 4 channels. Converting to BGR.")
-                frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
-            elif frame.shape[2] != 3:
-                logger.warning(f"Captured frame has {frame.shape[2]} channels. Truncating to 3 channels.")
-                frame = frame[:, :, :3]
-        if frame.dtype != np.uint8:
-            logger.warning(f"Captured frame has dtype {frame.dtype}. Converting to uint8.")
-            frame = frame.astype(np.uint8)
-
         # Run inference if model is loaded
         if model is None:
             logger.error("Model is not loaded.")
@@ -309,7 +294,7 @@ def snap_handler(command: str):
             annotated_frame = best_result.plot()
             cv2.imwrite(result_path, annotated_frame)
         else:
-            cv2.imwrite(result_path, frame)  # Save original if no detection
+            cv2.imwrite(result_path, frame) 
 
         # Log the detection result (ID and image path)
         logger.info(f"Snap taken: {capture_path}, Detected ID: {best_result_charactor}, Confidence: {best_conf}, Saved to: {result_path}")
