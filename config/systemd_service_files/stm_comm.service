@@ -4,11 +4,10 @@ After=network.target
 
 [Service]
 WorkingDirectory=/home/mdp23/MDP_RPI
-ExecStart=/bin/sh -c 'cd /home/mdp23/MDP_RPI && exec /home/mdp23/MDP_RPI/.venv/bin/python -m stm_comm.serial_comm'
+ExecStart=/home/mdp23/MDP_RPI/start_stm_comm.sh
 Restart=always
 User=pi
 Environment=PYTHONUNBUFFERED=1
-Environment=PYTHONPATH=/home/mdp23/MDP_RPI
 
 [Install]
 WantedBy=multi-user.target
