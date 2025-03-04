@@ -255,10 +255,10 @@ def handle_move(parts, logger):
     command_map = {
         "f": "SF010",
         "r": "SB010",
-        "fl": "LF000",
-        "fr": "RF000",
-        "bl": "LB000",
-        "br": "RB000",
+        "fl": "LF090",
+        "fr": "RF090",
+        "bl": "LB090",
+        "br": "RB090",
     }
 
     if direction not in command_map:
