@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 WorkingDirectory=/home/mdp23/MDP_RPI
-ExecStart=/home/mdp23/MDP_RPI/.venv/bin/python -m stm_comm.serial_comm
+ExecStart=/bin/sh -c 'cd /home/mdp23/MDP_RPI && exec /home/mdp23/MDP_RPI/.venv/bin/python -m stm_comm.serial_comm'
 Restart=always
 User=pi
 Environment=PYTHONUNBUFFERED=1
