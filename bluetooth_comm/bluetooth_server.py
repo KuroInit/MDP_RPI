@@ -100,14 +100,14 @@ def process_message(parts, client_sock, logger):
         logger.warning("Empty message parts after re-splitting CMD message.")
         return
 
-    if msg_type == "ROBOT":
-        handle_robot(parts, logger)
-    elif msg_type == "TARGET":
+    # if msg_type == "ROBOT":
+    #    handle_robot(parts, logger)
+    if msg_type == "TARGET":
         handle_target(parts, logger)
     elif msg_type == "STATUS":
         handle_status(parts, logger)
-    elif msg_type == "OBSTACLE":
-        handle_obstacle(parts, logger)
+    # elif msg_type == "OBSTACLE":
+    #    handle_obstacle(parts, logger)
     elif msg_type == "FACE":
         handle_face(parts, logger)
     elif msg_type == "MOVE":
@@ -314,29 +314,54 @@ def handle_cmd(parts, logger, client_sock):
             logger.error("CMD,sendArena missing JSON data.")
             return
         try:
+            # Load the JSON data from the third part
             arena_data = json.loads(parts[2])
+
+            # Validate that required keys exist
+            required_keys = ["robot_x", "robot_y", "robot_dir", "obstacles"]
+            if not all(key in arena_data for key in required_keys):
+                logger.error("Invalid arena data: Missing required fields.")
+                return
+
             # Update robot position
-            robot_position["x"] = arena_data.get("robot_x", robot_position["x"])
-            robot_position["y"] = arena_data.get("robot_y", robot_position["y"])
-            # Update robot direction using robot_dir field
-            robot_dir_str = arena_data.get("robot_dir")
-            if robot_dir_str and robot_dir_str.upper() in direction_map:
-                robot_position["dir"] = direction_map[robot_dir_str.upper()]
+            robot_position["x"] = arena_data["robot_x"]
+            robot_position["y"] = arena_data["robot_y"]
+
+            # Validate and update robot direction
+            robot_dir_str = arena_data["robot_dir"].upper()
+            if robot_dir_str in direction_map:
+                robot_position["dir"] = direction_map[robot_dir_str]
             else:
                 logger.warning(
-                    "Invalid or missing robot_dir; keeping previous direction."
+                    f"Invalid robot_dir '{robot_dir_str}', keeping previous direction."
                 )
 
-            # Parse obstacles from JSON and update the global obstacles_list
+            # Parse obstacles
             parsed_obstacles = []
-            for obs in arena_data.get("obstacles", []):
-                parsed = parse_obstacle_json(obs, logger)
-                if parsed is not None:
-                    parsed_obstacles.append(parsed)
-            obstacles_list = parsed_obstacles
+            for obs in arena_data["obstacles"]:
+                # Ensure all required fields exist in obstacle data
+                if not all(k in obs for k in ["x", "y", "id", "d"]):
+                    logger.warning(f"Skipping invalid obstacle data: {obs}")
+                    continue  # Skip malformed obstacles
 
-            send_obstacle_data(logger)
+                # Convert direction from string to numerical value
+                obs_direction = obs["d"].upper()
+                if obs_direction in direction_map:
+                    obs["d"] = direction_map[obs_direction]
+                else:
+                    logger.warning(
+                        f"Invalid obstacle direction '{obs_direction}', defaulting to SOUTH (4)."
+                    )
+                    obs["d"] = 4  # Default SOUTH
 
+                parsed_obstacles.append(obs)
+
+            # Update the global obstacles list
+            obstacles_list.clear()
+            obstacles_list.extend(parsed_obstacles)
+            logger.info(
+                f"Arena data updated: Robot {robot_position}, Obstacles: {obstacles_list}"
+            )
         except json.JSONDecodeError:
             logger.error("Parsing error for sendArena JSON data.")
     elif command == "beginexplore":
@@ -347,7 +372,7 @@ def handle_cmd(parts, logger, client_sock):
         logger.info("Task switched to Fastest Path Mode")
         send_text_message(client_sock, "Task switched to Fastest Path Mode", logger)
     elif command == "resetmap":
-        obstacles_list = []
+        obstacles_list.clear()
         robot_position = {"x": 1, "y": 1, "dir": 0}
         logger.info("Map reset: obstacles cleared and robot position reset.")
         send_text_message(client_sock, "Map reset", logger)
