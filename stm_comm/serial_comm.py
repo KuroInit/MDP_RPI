@@ -87,8 +87,16 @@ def start_ipc_server(ser, socket_path="/tmp/stm_ipc.sock"):
             if data:
                 command = data.decode("utf-8").strip()
                 logger.info("Received command via IPC: " + command)
+
+                # If the command is "FIN", return to wait state
+                if command.upper() == "FIN":
+                    logger.info("Received FIN command. Returning to wait state.")
+                    conn.send(b"OK: FIN received, returning to wait state")
+                    continue  # Do not send FIN to the STM, just acknowledge and wait.
+
                 # Send the command over the serial interface
                 send_command(ser, command)
+
                 # Optionally, read a response from the STM and send an acknowledgment
                 response = read_response(ser)
                 conn.send(
