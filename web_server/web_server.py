@@ -15,9 +15,51 @@ from web_server.utils.imageRec import loadModel, predictImage
 import cv2
 from ultralytics import YOLO
 import onnxruntime
+import numpy as np
+import sys
+from flask import jsonify
+
 
 # Use Picamera2 instead of the legacy PiCamera
 from picamera2 import Picamera2
+
+NAME_TO_CHARACTOR = {
+    "NA": "NA",
+    "Bullseye": 30,
+    "One": 0,
+    "Two": 1,
+    "Three": 2,
+    "Four": 3,
+    "Five": 4,
+    "Six": 5,
+    "Seven": 6,
+    "Eight": 7,
+    "Nine": 8,
+    "A": 9,
+    "B": 10,
+    "C": 11,
+    "D": 12,
+    "E": 13,
+    "F": 14,
+    "G": 15,
+    "H": 16,
+    "S": 17,
+    "T": 18,
+    "U": 19,
+    "V": 20,
+    "W": 21,
+    "X": 22,
+    "Y": 23,
+    "Z": 24,
+    "Up": 25,
+    "Down": 26,
+    "Right": 27,
+    "Left": 28,
+    "Stop": 29,
+}
+
+# Define confidence threshold
+CONF_THRESHOLD = 0.4
 
 app = FastAPI()
 app.add_middleware(
@@ -33,6 +75,16 @@ logger = loggers["webserver"]
 
 # Define the socket path used for IPC with the STM service
 STM_SOCKET_PATH = "/tmp/stm_ipc.sock"
+
+RESULT_IMAGE_DIR = os.path.join(os.getcwd(), "web_server", "result_image")
+os.makedirs(RESULT_IMAGE_DIR, exist_ok=True)
+
+MODEL_PATH = os.path.join(os.getcwd(), "web_server", "utils", "trained_models", "v8_white_bg.onnx")
+try:
+    model = YOLO(MODEL_PATH)
+except Exception as e:
+    app.logger.error(f"Loading Model Failed: {e}")
+    model = None
 
 
 # System resource analysis
@@ -195,41 +247,75 @@ async def send_stm_command(stm_command: STMCommandRequest):
 
 
 def snap_handler(command: str):
-    """
-    Snap handler for SNAP commands.
-    Extracts the numeric part (if any) and logs the snap command.
-    Uses Picamera2 instead of the legacy PiCamera.
-    """
-    # Extract the number after "SNAP" (if any)
-    num = command[4:].strip()
-    loggers.info(f"Snap command received: {num}")
 
     try:
-        # Initialize Picamera2
-        picam2 = Picamera2()
-        # Configure for still capture
-        config = picam2.create_still_configuration()
-        picam2.configure(config)
-        picam2.start()
+        # Generate unique filenames with timestamp
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        capture_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}.jpg")
+        result_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}_result.jpg")
 
-        img_name = f"snap_{int(time.time())}.jpg"
-        img_path = os.path.join("uploads", img_name)
-        # Capture image directly to a file
-        picam2.capture_file(img_path)
-        picam2.stop()
-        loggers.info(f"Image saved: {img_path}")
+        # Capture image using libcamera-still
+        cmd = ["libcamera-still", "-o", capture_path, "--timeout", "1000"]
+        subprocess.run(cmd, check=True)
+
+        # Load the captured image
+        frame = cv2.imread(capture_path)
+        if frame is None or frame.size == 0:
+            logger.error("Failed to load captured image.")
+            return
+
+        # Validate and adjust image format
+        if len(frame.shape) == 2:
+            logger.warning("Captured frame is grayscale. Converting to BGR.")
+            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2BGR)
+        elif len(frame.shape) == 3:
+            if frame.shape[2] == 4:
+                logger.warning("Captured frame has 4 channels. Converting to BGR.")
+                frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
+            elif frame.shape[2] != 3:
+                logger.warning(f"Captured frame has {frame.shape[2]} channels. Truncating to 3 channels.")
+                frame = frame[:, :, :3]
+        if frame.dtype != np.uint8:
+            logger.warning(f"Captured frame has dtype {frame.dtype}. Converting to uint8.")
+            frame = frame.astype(np.uint8)
+
+        # Run inference if model is loaded
+        if model is None:
+            logger.error("Model is not loaded.")
+            return
+
+        results = model(frame, verbose=False)
+
+        # Extract the best detection result
+        best_conf = 0.0
+        best_result = None
+        best_result_charactor = "NA"
+
+        for result in results:
+            if result.boxes is not None and result.boxes.conf is not None and len(result.boxes.conf) > 0:
+                conf_tensor = result.boxes.conf
+                max_conf = float(conf_tensor.max())
+                idx = int(conf_tensor.argmax())
+                if max_conf > best_conf and max_conf >= CONF_THRESHOLD:
+                    best_conf = max_conf
+                    best_result_id = int(result.boxes.cls[idx])
+                    best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
+                        list(NAME_TO_CHARACTOR.values()).index(best_result_id)
+                    ]
+                    best_result = result
+
+        # Save the annotated image
+        if best_result is not None:
+            annotated_frame = best_result.plot()
+            cv2.imwrite(result_path, annotated_frame)
+        else:
+            cv2.imwrite(result_path, frame)  # Save original if no detection
+
+        # Log the detection result (ID and image path)
+        logger.info(f"Snap taken: {capture_path}, Detected ID: {best_result_charactor}, Confidence: {best_conf}, Saved to: {result_path}")
+
     except Exception as e:
-        loggers.error(f"Failed to capture image: {e}")
-        return
-
-    # Load the ONNX model
-    session = loadModel()
-
-    # Run inference
-    result = predictImage(img_name, session)
-    loggers.info(f"Inference result: {result}")
-
-    return result
+        logger.error(f"Error in snap_handler: {e}")
 
 
 # def parse_command(command: str) -> str:
