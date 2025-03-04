@@ -249,56 +249,59 @@ async def send_stm_command(stm_command: STMCommandRequest):
 def snap_handler(command: str):
 
     try:
-        # Generate unique filenames with timestamp
         timestamp = time.strftime("%Y%m%d_%H%M%S")
-        capture_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}.jpg")
-        result_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}_result.jpg")
-
-        # Capture image using libcamera-still
-        cmd = ["libcamera-still", "-o", capture_path, "--timeout", "1000"]
-        subprocess.run(cmd, check=True)
-
-        # Load the captured image
-        frame = cv2.imread(capture_path)
-        if frame is None or frame.size == 0:
-            logger.error("Failed to load captured image.")
-            return
-
-        # Run inference if model is loaded
-        if model is None:
-            logger.error("Model is not loaded.")
-            return
-
-        results = model(frame, verbose=False)
-
-        # Extract the best detection result
         best_conf = 0.0
         best_result = None
         best_result_charactor = "NA"
+        best_frame_path = None
 
-        for result in results:
-            if result.boxes is not None and result.boxes.conf is not None and len(result.boxes.conf) > 0:
-                conf_tensor = result.boxes.conf
-                max_conf = float(conf_tensor.max())
-                idx = int(conf_tensor.argmax())
-                if max_conf > best_conf and max_conf >= CONF_THRESHOLD:
-                    best_conf = max_conf
-                    best_result_id = int(result.boxes.cls[idx])
-                    best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
-                        list(NAME_TO_CHARACTOR.values()).index(best_result_id)
-                    ]
-                    best_result = result
+        for i in range(5):
+            
+            frame_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}_{i}.jpg")
+            cmd = ["libcamera-still", "-o", frame_path, "--timeout", "500"]
+            subprocess.run(cmd, check=True)
+            frame = cv2.imread(frame_path)
+            if frame is None or frame.size == 0:
+                logger.error(f"Cannot load image captured by libcamera-still: {frame_path}")
+                continue
+
+            if model is None:
+                logger.error("Model not loaded; skipping inference.")
+                continue
+
+            results = model(frame, verbose=False)
+
+            for result in results:
+                if result.boxes is not None and result.boxes.conf is not None and len(result.boxes.conf) > 0:
+                    conf_tensor = result.boxes.conf
+                    max_conf = float(conf_tensor.max())
+                    idx = int(conf_tensor.argmax())
+
+                    if max_conf > best_conf and max_conf >= CONF_THRESHOLD:
+                        best_conf = max_conf
+                        best_result_id = int(result.boxes.cls[idx])
+                        best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
+                            list(NAME_TO_CHARACTOR.values()).index(best_result_id)
+                        ]
+                        best_result = result
+                        best_frame_path = frame_path
+
+            time.sleep(0.05) 
 
         # Save the annotated image
-        if best_result is not None:
+        result_image_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}_result.jpg")
+        if best_result is not None and best_frame_path is not None:
+            frame = cv2.imread(best_frame_path)
             annotated_frame = best_result.plot()
-            cv2.imwrite(result_path, annotated_frame)
+            cv2.imwrite(result_image_path, annotated_frame)
+            logger.info(f"Detected ID: {best_result_charactor}, Confidence: {best_conf}, Saved to: {best_frame_path}, Save Path: {result_image_path}")
         else:
-            cv2.imwrite(result_path, frame) 
+            logger.info("No valid result found.")
+            if best_frame_path is not None:
+                frame = cv2.imread(best_frame_path)
+                cv2.imwrite(result_image_path, frame) 
 
-        # Log the detection result (ID and image path)
-        logger.info(f"Snap taken: {capture_path}, Detected ID: {best_result_charactor}, Confidence: {best_conf}, Saved to: {result_path}")
-
+   
     except Exception as e:
         logger.error(f"Error in snap_handler: {e}")
 
