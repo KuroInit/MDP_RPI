@@ -223,12 +223,12 @@ def handle_move(parts, logger):
 
     # Map the received direction to the corresponding STM command.
     command_map = {
-        "f": "FW00",
-        "r": "BW00",
-        "fl": "FL00",
-        "fr": "FR00",
-        "bl": "BL00",
-        "br": "BR00",
+        "f": "SF010",
+        "r": "SB010",
+        "fl": "LF000",
+        "fr": "RF000",
+        "bl": "LB000",
+        "br": "RB000",
     }
 
     if direction not in command_map:
