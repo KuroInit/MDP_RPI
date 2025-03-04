@@ -21,12 +21,7 @@ def init_serial(port="/dev/ttyUSB0", baudrate=115200, timeout=1):
 
 def notify_bluetooth(command: str):
     bt_socket_path = "/tmp/bt_ipc.sock"
-    prefix = command[:2].upper()
-    notification = (
-        f"MOVE,{prefix}"
-        if prefix in ["FW", "FR", "FL", "BW", "BR", "BL"]
-        else f"NOTIFY_CMD:{command}"
-    )
+    notification = f"NOTIFY_CMD:{command}"
 
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     try:
