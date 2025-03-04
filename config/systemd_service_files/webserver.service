@@ -3,7 +3,7 @@ Description= Webserver Service
 After=network.target
 
 [Service]
-ExecStart=/home/mdp23/MDP_RPI/.venv/bin/uvicorn--host 0.0.0.0 --port 8000 --log-level info /home/mdp23/MDP_RPI/web_server/app:app
+ExecStart=/home/mdp23/MDP_RPI/.venv/bin/uvicorn --host 0.0.0.0 --port 8000 --log-level info /home/mdp23/MDP_RPI/web_server/app:app
 Restart=always
 User=pi
 Environment=PYTHONUNBUFFERED=1

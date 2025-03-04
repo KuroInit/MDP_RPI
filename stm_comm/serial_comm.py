@@ -41,7 +41,7 @@ def notify_bluetooth(command: str):
 
 def send_command(ser, command):
     try:
-        ser.write((command + "\n").encode("utf-8"))
+        ser.write((command).encode())
         logger.info(f"SERIAL: Sent command: {command}")
         # Notify the Bluetooth service every time a command is sent
         notify_bluetooth(command)
