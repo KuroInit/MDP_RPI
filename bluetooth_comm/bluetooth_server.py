@@ -303,7 +303,7 @@ def send_obstacle_data(logger):
 
 
 def handle_cmd(parts, logger, client_sock):
-    global obstacles_list
+    global obstacles_list, robot_position
     if len(parts) < 2:
         logger.error("CMD message missing parameters.")
         return
