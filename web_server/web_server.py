@@ -255,14 +255,24 @@ def snap_handler(command: str):
         best_result_charactor = "NA"
         best_frame_path = None
 
+        try:
+            picam2 = Picamera2()
+            picam2.configure(picam2.create_still_configuration())
+            picam2.start()
+        except Exception as e:
+            logger.error(f"Error initializing camera: {e}")
+            return
+
         for i in range(5):
             
             frame_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}_{i}.jpg")
             cmd = ["libcamera-still", "-o", frame_path, "--timeout", "500"]
             subprocess.run(cmd, check=True)
-            frame = cv2.imread(frame_path)
+            frame = picam2.capture_array()
+            cv2.imwrite(frame_path, frame)
             if frame is None or frame.size == 0:
-                logger.error(f"Cannot load image captured by libcamera-still: {frame_path}")
+
+                logger.error(f"Cannot load image captured : {frame_path}")
                 continue
 
             if model is None:
@@ -287,6 +297,8 @@ def snap_handler(command: str):
                         best_frame_path = frame_path
 
             time.sleep(0.05) 
+
+        picam2.stop()
 
         # Save the annotated image
         result_image_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}_result.jpg")
