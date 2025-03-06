@@ -89,13 +89,13 @@ class Obstacle(CellState):
         if self.direction == Direction.NORTH:
             if retrying == False:
                 # Or (x, y + 3)
-                if isValid(self.x, self.y + 1 + EXPANDED_CELL * 2):
+                if isValid(self.x, self.y + (1 + EXPANDED_CELL * 2)//2):
                     cells.append(CellState(
-                        self.x, self.y + 1 + EXPANDED_CELL * 2, Direction.SOUTH, self.obstacle_id, 5))
+                        self.x, self.y + (1 + EXPANDED_CELL * 2)//2, Direction.SOUTH, self.obstacle_id, 5))
                 # Or (x, y + 4)
-                if isValid(self.x, self.y + 2 + EXPANDED_CELL * 2):
+                if isValid(self.x, self.y + (2 + EXPANDED_CELL * 2)//2):
                     cells.append(CellState(
-                        self.x, self.y + 2 + EXPANDED_CELL * 2, Direction.SOUTH, self.obstacle_id, 0))
+                        self.x, self.y + (2 + EXPANDED_CELL * 2)//2, Direction.SOUTH, self.obstacle_id, 0))
 
                 # Or (x + 1, y + 3)
                 # if isValid(self.x + 1, self.y + 1 + EXPANDED_CELL * 2):
@@ -106,12 +106,12 @@ class Obstacle(CellState):
 
                 # Or (x + 1, y + 4)
                 if isValid(self.x + 1, self.y + 2 + EXPANDED_CELL * 2):
-                    cells.append(CellState(self.x + 1, self.y + 2 + EXPANDED_CELL *
-                                 2, Direction.SOUTH, self.obstacle_id, SCREENSHOT_COST))
+                    cells.append(CellState(self.x + 1, self.y + (2 + EXPANDED_CELL *
+                                 2)//2, Direction.SOUTH, self.obstacle_id, SCREENSHOT_COST))
                 # Or (x - 1, y + 4)
                 if isValid(self.x - 1, self.y + 2 + EXPANDED_CELL * 2):
-                    cells.append(CellState(self.x - 1, self.y + 2 + EXPANDED_CELL *
-                                 2, Direction.SOUTH, self.obstacle_id, SCREENSHOT_COST))
+                    cells.append(CellState(self.x - 1, self.y + (2 + EXPANDED_CELL *
+                                 2)//2, Direction.SOUTH, self.obstacle_id, SCREENSHOT_COST))
 
             elif retrying == True:
                 # Or (x, y + 4)
