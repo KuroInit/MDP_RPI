@@ -26,9 +26,12 @@ def init_serial(port="/dev/ttyUSB0", baudrate=115200, timeout=1):
             time.sleep(10)
 
 
-def notify_bluetooth(command: str):
+def notify_bluetooth(command: str, choice: int):
     bt_socket_path = "/tmp/bt_ipc.sock"
-    notification = f"NOTIFY_CMD:{command}"
+    if choice == '1':
+        notification = f"NOTIFY_CMD:{command}"
+    else:
+        notification = f"TARGET,{command}"
 
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     try:
@@ -105,7 +108,7 @@ def start_ipc_server(ser, socket_path="/tmp/stm_ipc.sock"):
                         logger.info("Waiting for ACK from STM...")
                         time.sleep(0.5)
 
-                notify_bluetooth(command)
+                notify_bluetooth(command,1)
                 conn.send(
                     ("OK: " + (response if response else "No response")).encode("utf-8")
                 )
