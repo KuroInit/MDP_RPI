@@ -259,17 +259,15 @@ def snap_handler(command: str):
             picam2 = Picamera2()
             picam2.configure(picam2.create_still_configuration())
             picam2.start()
-            time.sleep(2) 
             logger.info("Camera initialized.")
         except Exception as e:
             logger.error(f"Error initializing camera: {e}")
             return
 
-        for i in range(5):
+        for i in range(3):
             
             frame_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}_{i}.jpg")
             frame = picam2.capture_array()
-            time.sleep(0.5)
             cv2.imwrite(frame_path, frame)
             logger.info(f"Captured image: {frame_path}")
             if frame is None or frame.size == 0:
