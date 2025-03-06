@@ -259,6 +259,8 @@ def snap_handler(command: str):
             picam2 = Picamera2()
             picam2.configure(picam2.create_still_configuration())
             picam2.start()
+            time.sleep(2) 
+            logger.info("Camera initialized.")
         except Exception as e:
             logger.error(f"Error initializing camera: {e}")
             return
@@ -266,10 +268,10 @@ def snap_handler(command: str):
         for i in range(5):
             
             frame_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}_{i}.jpg")
-            cmd = ["libcamera-still", "-o", frame_path, "--timeout", "500"]
-            subprocess.run(cmd, check=True)
             frame = picam2.capture_array()
+            time.sleep(0.5)
             cv2.imwrite(frame_path, frame)
+            logger.info(f"Captured image: {frame_path}")
             if frame is None or frame.size == 0:
 
                 logger.error(f"Cannot load image captured : {frame_path}")
@@ -280,6 +282,7 @@ def snap_handler(command: str):
                 continue
 
             results = model(frame, verbose=False)
+            logger.info(f"Model inference")  
 
             for result in results:
                 if result.boxes is not None and result.boxes.conf is not None and len(result.boxes.conf) > 0:
