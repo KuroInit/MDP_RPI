@@ -301,7 +301,7 @@ def snap_handler(command: str):
 
             time.sleep(0.05) 
 
-        picam2.stop()
+        picam2.close()
 
         # Save the annotated image
         result_image_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}_result.jpg")
