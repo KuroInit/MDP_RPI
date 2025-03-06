@@ -400,6 +400,8 @@ def run_task1(result: dict):
     for command in commands:
         if command.upper().startswith("SNAP"):
             snap_handler(command)
+        elif (command == "FIN"):
+            break
         else:
             ack_received = False
             while not ack_received:
