@@ -128,7 +128,7 @@ class PathFinder:
             cur_view_positions = []
             
             # print(f"===================\nop = {op}")
-            # print("List of obstacle visited: \n")
+            # print("List of obstacle visited:X \n")
 
             # For each obstacle
             for idx in range(len(all_view_positions)):
