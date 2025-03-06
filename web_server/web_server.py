@@ -79,7 +79,7 @@ STM_SOCKET_PATH = "/tmp/stm_ipc.sock"
 RESULT_IMAGE_DIR = os.path.join(os.getcwd(), "web_server", "result_image")
 os.makedirs(RESULT_IMAGE_DIR, exist_ok=True)
 
-MODEL_PATH = os.path.join(os.getcwd(), "web_server", "utils", "trained_models", "v8_white_bg.onnx")
+MODEL_PATH = os.path.join(os.getcwd(), "web_server", "utils", "trained_models", "v9_noise_bg.onnx")
 try:
     model = YOLO(MODEL_PATH)
 except Exception as e:
@@ -258,6 +258,8 @@ def snap_handler(command: str):
         try:
             picam2 = Picamera2()
             picam2.configure(picam2.create_still_configuration())
+            config = picam2.create_still_configuration(main={"size": (1080, 720)})  # Set resolution
+            picam2.configure(config)
             picam2.start()
             logger.info("Camera initialized.")
         except Exception as e:
