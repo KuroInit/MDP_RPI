@@ -12,6 +12,7 @@ from web_server.utils.pathFinder import PathFinder
 from web_server.utils.helper import commandGenerator
 from config.logging_config import loggers  # Import Loguru config
 from web_server.utils.imageRec import loadModel, predictImage
+from stm_comm.serial_comm import notify_bluetooth
 import cv2
 from ultralytics import YOLO
 import onnxruntime
@@ -165,6 +166,7 @@ def readRoot():
     return {"Backend": "Running"}
 
 
+
 @app.post("/path")
 async def pathFinding(request: PathFindingRequest, background_tasks: BackgroundTasks):
     """Main endpoint for the path finding algorithm."""
@@ -246,7 +248,12 @@ async def send_stm_command(stm_command: STMCommandRequest):
     return {"stm_response": response}
 
 
-def snap_handler(command: str):
+def send_target_identification(obstacle_number: int, target_id: int):
+    command = f"{obstacle_number},{target_id}"
+    notify_bluetooth(command, 2)
+
+
+def snap_handler(command: str, obid: str):
 
     try:
         timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -268,7 +275,7 @@ def snap_handler(command: str):
 
         for i in range(3):
             
-            frame_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}_{i}.jpg")
+            frame_path = os.path.join(RESULT_IMAGE_DIR, f"snap{obid}_{i}.jpg")
             frame = picam2.capture_array()
             cv2.imwrite(frame_path, frame)
             logger.info(f"Captured image: {frame_path}")
@@ -304,7 +311,7 @@ def snap_handler(command: str):
         picam2.close()
 
         # Save the annotated image
-        result_image_path = os.path.join(RESULT_IMAGE_DIR, f"snap_{timestamp}_result.jpg")
+        result_image_path = os.path.join(RESULT_IMAGE_DIR, f"snap{obid}.jpg")
         if best_result is not None and best_frame_path is not None:
             frame = cv2.imread(best_frame_path)
             annotated_frame = best_result.plot()
@@ -329,7 +336,9 @@ def run_task1(result: dict):
 
     for command in commands:
         if command.upper().startswith("SNAP"):
-            snap_handler(command)
+            ob_id = command[4:] 
+            snap_handler(command, ob_id)
+            send_target_identification(ob_id, ob_id) #send ob id and target id to bluetooth Note: obstacle id = target id
         elif (command == "FIN"):
             break
         else:
