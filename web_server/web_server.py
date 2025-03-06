@@ -248,7 +248,7 @@ async def send_stm_command(stm_command: STMCommandRequest):
     return {"stm_response": response}
 
 
-def send_target_identification(obstacle_number: int, target_id: int):
+def send_target_identification(obstacle_number: str, target_id: str):
     command = f"{obstacle_number},{target_id}"
     notify_bluetooth(command, 2)
 
@@ -275,7 +275,7 @@ def snap_handler(command: str, obid: str):
 
         for i in range(3):
             
-            frame_path = os.path.join(RESULT_IMAGE_DIR, f"snap{obid}_{i}.jpg")
+            frame_path = os.path.join(RESULT_IMAGE_DIR, f"SNAP{obid}_{i}.jpg")
             frame = picam2.capture_array()
             cv2.imwrite(frame_path, frame)
             logger.info(f"Captured image: {frame_path}")
@@ -311,7 +311,7 @@ def snap_handler(command: str, obid: str):
         picam2.close()
 
         # Save the annotated image
-        result_image_path = os.path.join(RESULT_IMAGE_DIR, f"snap{obid}.jpg")
+        result_image_path = os.path.join(RESULT_IMAGE_DIR, f"SNAP{obid}.jpg")
         if best_result is not None and best_frame_path is not None:
             frame = cv2.imread(best_frame_path)
             annotated_frame = best_result.plot()
