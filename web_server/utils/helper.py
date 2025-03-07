@@ -66,11 +66,11 @@ def commandGenerator(states, obstacles):
                 # Obstacle facing WEST, robot facing EAST
                 if current_ob_dict['d'] == 6 and current_robot_position.direction == 2:
                     if current_ob_dict['y'] > current_robot_position.y:
-                        commands.append(f"SNAP{states[i].screenshot_id}_L")
+                        commands.append(f"SNAP{states[i].screenshot_id}")
                     elif current_ob_dict['y'] == current_robot_position.y:
-                        commands.append(f"SNAP{states[i].screenshot_id}_C")
+                        commands.append(f"SNAP{states[i].screenshot_id}")
                     elif current_ob_dict['y'] < current_robot_position.y:
-                        commands.append(f"SNAP{states[i].screenshot_id}_R")
+                        commands.append(f"SNAP{states[i].screenshot_id}")
                     else:
                         commands.append(f"SNAP{states[i].screenshot_id}")
                 

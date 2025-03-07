@@ -321,8 +321,10 @@ def snap_handler(command: str, obid: str):
             logger.info("No valid result found.")
             if best_frame_path is not None:
                 frame = cv2.imread(best_frame_path)
-                cv2.imwrite(result_image_path, frame) 
+                cv2.imwrite(result_image_path, frame)
 
+        #return iamge id        
+        return str(best_result_id) if best_result_id is not None else "NA"
    
     except Exception as e:
         logger.error(f"Error in snap_handler: {e}")
@@ -336,9 +338,9 @@ def run_task1(result: dict):
 
     for command in commands:
         if command.upper().startswith("SNAP"):
-            ob_id = command[4:] 
-            snap_handler(command, ob_id)
-            send_target_identification(ob_id, ob_id) #send ob id and target id to bluetooth Note: obstacle id = target id
+            ob_id = command[4:]
+            target_id = snap_handler(command, ob_id)
+            send_target_identification(ob_id, target_id) #send ob id and target id to bluetooth
         elif (command == "FIN"):
             break
         else:
