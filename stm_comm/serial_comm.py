@@ -30,7 +30,7 @@ def notify_bluetooth(command: str, choice: int):
     bt_socket_path = "/tmp/bt_ipc.sock"
     if choice == '1':
         notification = f"NOTIFY_CMD:{command}"
-    else:
+    elif choice == '2':
         notification = f"TARGET,{command}"
 
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
