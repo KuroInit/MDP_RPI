@@ -325,7 +325,7 @@ def snap_handler(command: str, obid: str):
                 cv2.imwrite(result_image_path, frame)
 
         #return iamge id        
-        return str(best_result_id) if best_result_id is not None else "NA"
+        return best_result_charactor
    
     except Exception as e:
         logger.error(f"Error in snap_handler: {e}")
