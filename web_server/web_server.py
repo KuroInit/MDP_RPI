@@ -382,7 +382,7 @@ def run_task1(result: dict):
             target_id = snap_handler(command, ob_id)
             send_target_identification(ob_id, target_id) #send ob id and target id to bluetooth
         elif (command == "FIN"):
-            # stitchImage()
+            stitchImage()
             break 
         else:
             ack_received = False
