@@ -53,11 +53,11 @@ NAME_TO_CHARACTOR = {
     "X": 33,
     "Y": 34,
     "Z": 35,
-    "Up": 36,
-    "Down": 37,
-    "Right": 38,
-    "Left": 39,
-    "Stop": 40,
+    "Up": 36, # Up
+    "Down": 37, # Down
+    "Right": 38, # Right
+    "Left": 39, # Left
+    "Stop": 40, # Stop
 }
 
 # Define confidence threshold
@@ -330,52 +330,52 @@ def snap_handler(command: str, obid: str):
     except Exception as e:
         logger.error(f"Error in snap_handler: {e}")
 
-def stitchImage():
-    """
-    Stitches all SNAP images together and saves as SNAPALLSTITCHED.jpg using OpenCV.
-    Opens the stitched image on the PC and does not return any value.
-    """
-    imgFolder = RESULT_IMAGE_DIR  # Directory where SNAP images are stored
-    stitchedPath = os.path.join(imgFolder, 'SNAPALLSTITCHED.jpg')
-    
-    # Get paths of all SNAP images (SNAP{obid}.jpg)
-    imgPaths = glob.glob(os.path.join(imgFolder, "SNAP*.jpg"))
-    
-    # Check if there are any images to stitch
-    if not imgPaths:
-        print("No SNAP images found to stitch.")
-        return
-
-    images = [cv2.imread(x) for x in imgPaths]
-    
-    # Check if all images were successfully loaded
-    if any(img is None for img in images):
-        print("Error: One or more images could not be loaded.")
-        return
-
-    # Calculate total width and max height for the stitched image
-    total_width = sum(img.shape[1] for img in images)
-    max_height = max(img.shape[0] for img in images)
-    
-    # Create a new blank image with the calculated dimensions
-    stitchedImg = 255 * np.ones(shape=[max_height, total_width, 3], dtype=np.uint8)  # White background
-
-    # Paste each image into the stitched image
-    x_offset = 0
-    for img in images:
-        stitchedImg[:img.shape[0], x_offset:x_offset + img.shape[1]] = img
-        x_offset += img.shape[1]
-    
-    # Save the stitched image using OpenCV
-    cv2.imwrite(stitchedPath, stitchedImg)
-    
-    print(f"Stitched image saved to: {stitchedPath}")
-    
-    # Optionally open the stitched image using the default image viewer
-    if os.name == 'posix':  # If the system is Unix-based (Linux/macOS)
-        subprocess.run(["xdg-open", stitchedPath])
-    elif os.name == 'nt':  # If the system is Windows
-        os.startfile(stitchedPath)
+# def stitchImage():
+#   """
+#    Stitches all SNAP images together and saves as SNAPALLSTITCHED.jpg using OpenCV.
+#    Opens the stitched image on the PC and does not return any value.
+#    """
+#    imgFolder = RESULT_IMAGE_DIR  # Directory where SNAP images are stored
+#    stitchedPath = os.path.join(imgFolder, 'SNAPALLSTITCHED.jpg')
+#    
+#    # Get paths of all SNAP images (SNAP{obid}.jpg)
+#    imgPaths = glob.glob(os.path.join(imgFolder, "SNAP*.jpg"))
+#    
+#    # Check if there are any images to stitch
+#   if not imgPaths:
+#       print("No SNAP images found to stitch.")
+#        return
+#
+#    images = [cv2.imread(x) for x in imgPaths]
+#    
+#    # Check if all images were successfully loaded
+#    if any(img is None for img in images):
+#        print("Error: One or more images could not be loaded.")
+#        return
+#
+#    # Calculate total width and max height for the stitched image
+#    total_width = sum(img.shape[1] for img in images)
+#    max_height = max(img.shape[0] for img in images)
+#    
+#    # Create a new blank image with the calculated dimensions
+#    stitchedImg = 255 * np.ones(shape=[max_height, total_width, 3], dtype=np.uint8)  # White background
+#
+#    # Paste each image into the stitched image
+#    x_offset = 0
+#    for img in images:
+#       stitchedImg[:img.shape[0], x_offset:x_offset + img.shape[1]] = img
+#        x_offset += img.shape[1]
+#    
+#    # Save the stitched image using OpenCV
+#    cv2.imwrite(stitchedPath, stitchedImg)
+#   
+#    print(f"Stitched image saved to: {stitchedPath}")
+#   
+#   # Optionally open the stitched image using the default image viewer
+#    if os.name == 'posix':  # If the system is Unix-based (Linux/macOS)
+#        subprocess.run(["xdg-open", stitchedPath])
+#    elif os.name == 'nt':  # If the system is Windows
+#        os.startfile(stitchedPath)
 
 
 
@@ -391,8 +391,8 @@ def run_task1(result: dict):
             target_id = snap_handler(command, ob_id)
             send_target_identification(ob_id, target_id) #send ob id and target id to bluetooth
         elif (command == "FIN"):
-            stitchImage()
-            break
+            # stitchImage()
+            break 
         else:
             ack_received = False
             while not ack_received:
