@@ -61,7 +61,6 @@ NAME_TO_CHARACTOR = {
 }
 
 NAME_TO_CHARACTOR_ANDROID = {
-    "Bullseye": "99",
     "One": "11",
     "Two": "12",
     "Three": "13",
