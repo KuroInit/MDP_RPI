@@ -290,7 +290,7 @@ def send_obstacle_data(logger):
     logger.info(f"Uploading map data to Algorithm Server: {map_data}")
 
     try:
-        response = requests.post(ALGO_API_URL, json=map_data, timeout=5)
+        response = requests.post(ALGO_API_URL, json=map_data, timeout=15)
         if response.status_code == 200:
             logger.info("Successfully uploaded map data to Algorithm Server.")
             logger.info(f"Response: {response.json()}")
