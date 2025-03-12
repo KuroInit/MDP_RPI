@@ -435,7 +435,7 @@ def run_task1(result: dict):
                     time.sleep(1)  # Wait before retrying on error
 
         # Delay between commands; adjust as needed based on robot response time.
-        time.sleep(1)
+        time.sleep(0.1)
 
     logger.info("Task1 execution complete")
 
