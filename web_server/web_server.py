@@ -60,6 +60,40 @@ NAME_TO_CHARACTOR = {
     "Stop": 29,
 }
 
+NAME_TO_CHARACTOR_ANDROID = {
+    "Bullseye": "99",
+    "One": "11",
+    "Two": "12",
+    "Three": "13",
+    "Four": "14",
+    "Five": "15",
+    "Six": "16",
+    "Seven": "17",
+    "Eight": "18",
+    "Nine": "19",
+    "A": "20",
+    "B": "21",
+    "C": "22",
+    "D": "23",
+    "E": "24",
+    "F": "25",
+    "G": "26",
+    "H": "27",
+    "S": "28",
+    "T": "29",
+    "U": "30",
+    "V": "31",
+    "W": "32",
+    "X": "33",
+    "Y": "34",
+    "Z": "35",
+    "Up": "36",
+    "Down": "37",
+    "Right": "38",
+    "Left": "39",
+    "Stop": "40",
+}
+
 # Define confidence threshold
 CONF_THRESHOLD = 0.4
 
@@ -380,7 +414,8 @@ def run_task1(result: dict):
         if command.upper().startswith("SNAP"):
             ob_id = command[4:]
             target_id = snap_handler(command, ob_id)
-            send_target_identification(ob_id, target_id) #send ob id and target id to bluetooth
+            target_id_android = NAME_TO_CHARACTOR_ANDROID.get(target_id, "NA")  # Default to NA if not found
+            send_target_identification(ob_id, target_id_android) #send ob id and target id to bluetooth
         elif (command == "FIN"):
             stitchImage()
             break 
