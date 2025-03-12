@@ -218,13 +218,13 @@ class PathFinder:
             int: safe cost
         """
         for ob in self.grid.obstacles:
-            if abs(ob.x-x) == 1 and abs(ob.y-y) == 1:
+            if abs(ob.x-x) == 2 and abs(ob.y-y) == 2:
                 return SAFE_COST
             
-            if abs(ob.x-x) == 1 and abs(ob.y-y) == 1:
+            if abs(ob.x-x) == 2 and abs(ob.y-y) == 2:
                 return SAFE_COST
             
-            if abs(ob.x-x) == 1 and abs(ob.y-y) == 1:
+            if abs(ob.x-x) == 2 and abs(ob.y-y) == 2:
                 return SAFE_COST
 
         return 0
