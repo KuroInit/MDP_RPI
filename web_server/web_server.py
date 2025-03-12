@@ -418,6 +418,7 @@ def run_task1(result: dict):
             send_target_identification(ob_id, target_id_android) #send ob id and target id to bluetooth
         elif (command == "FIN"):
             stitchImage()
+            notify_bluetooth("FIN", 1)
             break 
         else:
             ack_received = False
