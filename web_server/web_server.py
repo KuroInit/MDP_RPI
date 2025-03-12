@@ -265,9 +265,9 @@ def snap_handler(command: str, obid: str):
 
         try:
             picam2 = Picamera2()
-            # picam2.configure(picam2.create_still_configuration())
-            # config = picam2.create_still_configuration() 
-            # picam2.configure(config)
+            picam2.configure(picam2.create_still_configuration())
+            config = picam2.create_still_configuration() 
+            picam2.configure(config)
             picam2.start()
             logger.info("Camera initialized.")
         except Exception as e:
