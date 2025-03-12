@@ -6,3 +6,4 @@ web_server/__pycache__/
 .DS_Store
 web_server/utils/.DS_Store
 test_image_model/static/*.jpg
+*.pyc

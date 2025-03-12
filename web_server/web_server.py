@@ -327,6 +327,8 @@ def snap_handler(command: str, obid: str):
 
             for result in results:
                 if result.boxes is not None and result.boxes.conf is not None and len(result.boxes.conf) > 0:
+                    if result.boxes.cls[idx] == 30:
+                        continue # Skip Bullseye detection
                     conf_tensor = result.boxes.conf
                     max_conf = float(conf_tensor.max())
                     idx = int(conf_tensor.argmax())
