@@ -8,7 +8,7 @@ from web_server.utils.consts import Direction, MOVE_DIRECTION, TURN_FACTOR, ITER
 from python_tsp.exact import solve_tsp_dynamic_programming
 
 turn_wrt_big_turns = [[3 * TURN_RADIUS, 1 * TURN_RADIUS],
-                  [3 * TURN_RADIUS, 2 * TURN_RADIUS]]
+                  [4 * TURN_RADIUS, 2 * TURN_RADIUS]]
 
 
 class PathFinder:
