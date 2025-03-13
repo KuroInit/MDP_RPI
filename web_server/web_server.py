@@ -347,7 +347,7 @@ def snap_handler(command: str, obid: str):
                         x1, y1, x2, y2 = bbox
                         area = (x2 - x1) * (y2 - y1)
 
-                        # Check if this detection is a better candidate
+                        # If current detection has a higher confidence, update immediately.
                         if conf_val > best_conf:
                             best_conf = conf_val
                             best_area = area
@@ -357,7 +357,12 @@ def snap_handler(command: str, obid: str):
                             ]
                             best_result = result
                             best_frame_path = frame_path
-                        elif conf_val == best_conf and area > best_area:
+                        # If the detection's confidence is within 10% of the best, compare the bounding box area.
+                        elif (
+                            best_conf > 0
+                            and (conf_val / best_conf >= 0.9)
+                            and (area > best_area)
+                        ):
                             best_area = area
                             best_result_id = int(result.boxes.cls[j])
                             best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
@@ -385,7 +390,7 @@ def snap_handler(command: str, obid: str):
                 frame = cv2.imread(best_frame_path)
                 cv2.imwrite(result_image_path, frame)
 
-        # Return image id (detected character)
+        # Return the detected character (image id)
         return best_result_charactor
 
     except Exception as e:
