@@ -342,7 +342,7 @@ def snap_handler(command: str, obid: str):
                         best_result = result
                         best_frame_path = frame_path
 
-            time.sleep(0.7) 
+            time.sleep(1) 
 
         picam2.close()
 
