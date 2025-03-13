@@ -3,6 +3,7 @@ from tkinter import messagebox, ttk
 import math
 from web_server.utils.pathFinder import PathFinder
 from web_server.utils.consts import Direction, WIDTH, HEIGHT
+
 class PathfindingTestUI:
     def __init__(self, master):
         self.master = master
@@ -70,6 +71,15 @@ class PathfindingTestUI:
             self.canvas.create_line(i*self.cell_size, 0,
                                   i*self.cell_size, self.grid_size*self.cell_size)
         
+        for i in range(self.grid_size):
+            x_pos = i * self.cell_size + self.cell_size / 2
+            self.canvas.create_text(x_pos, 10, text=str(i), font=("Arial", 10), fill="black")
+        # Y轴：每个格子中心显示行号（注意转换坐标：上边缘对应行号最大）
+        for j in range(self.grid_size):
+            y_pos = (self.grid_size - j - 1) * self.cell_size + self.cell_size / 2
+            self.canvas.create_text(10, y_pos, text=str(j), font=("Arial", 10), fill="black")
+
+            
         # 绘制机器人起始位置
         x, y = self.robot_start
         self.draw_robot(x, y)
@@ -145,8 +155,10 @@ class PathfindingTestUI:
         self.draw_grid()
         self.commands_text.delete("1.0", tk.END)
         self.canvas.delete("actual_route")
+    
     def calculate_path(self):
-        # 初始化PathFinder
+
+        # Initialize path finder
         path_finder = PathFinder(
             size_x=self.grid_size,
             size_y=self.grid_size,
@@ -155,24 +167,28 @@ class PathfindingTestUI:
             robot_direction=self.robot_dir
         )
         
-        # 添加障碍物
+        # Add obstacles
         for obstacle in self.obstacles.values():
             path_finder.add_obstacle(obstacle["x"], obstacle["y"], obstacle["d"], obstacle_id=obstacle["id"])
         
         try:
-            # 计算路径，返回optimal_path和总距离
+            
+            # Calculate path
             optimal_path, distance = path_finder.get_optimal_order_dp(retrying=False)
             self.draw_path(optimal_path)
-            # 生成命令：转换障碍物数据为列表传递给commandGenerator
+            
+            # Generate commands
             from web_server.utils.helper import commandGenerator
             obstacles_list = list(self.obstacles.values())
             self.commands = commandGenerator(optimal_path, obstacles_list)
-            # 在UI上显示命令
+        
+            # Display commands
             self.commands_text.delete("1.0", tk.END)
             self.commands_text.insert(tk.END, "\n".join(self.commands))
             messagebox.showinfo("Result", f"Path found! Total distance: {distance}")
         except Exception as e:
             messagebox.showerror("Error", f"No valid path found!\n{str(e)}")
+    
     def draw_path(self, path):
         self.canvas.delete("path")
         prev_point = None
@@ -184,17 +200,17 @@ class PathfindingTestUI:
             cx = (x + 0.5) * self.cell_size
             cy = (y + 0.5) * self.cell_size
             
-            # 绘制路径点
-            self.canvas.create_oval(
-                cx-3, cy-3, cx+3, cy+3,
-                fill="green", tags="path"
-            )
+            # # 绘制路径点
+            # self.canvas.create_oval(
+            #     cx-3, cy-3, cx+3, cy+3,
+            #     fill="green", tags="path"
+            # )
             
             # 绘制连接线
             if prev_point:
                 self.canvas.create_line(
                     prev_point[0], prev_point[1], cx, cy,
-                    fill="green", width=2, tags="path"
+                    fill="green", width=1, tags="path"
                 )
             prev_point = (cx, cy)
             
@@ -215,7 +231,7 @@ class PathfindingTestUI:
                 y2 = cy - arrow_length * math.sin(angle)
                 self.canvas.create_line(
                     cx, cy, x2, y2,
-                    arrow=tk.LAST, fill="green", width=2, tags="path"
+                    arrow=tk.LAST, fill="green", width=3, tags="path"
                 )
     # 新增：根据生成的命令绘制小车的实际行驶轨迹（包括转弯圆弧和标出小车头部）
     def draw_actual_route(self, commands):
@@ -303,7 +319,9 @@ class PathfindingTestUI:
                 # 更新机器人的朝向（无论前进还是倒车，都按照转向命令旋转90°）
                 theta = theta + sign * turn_angle
 
-                move_dist = 1 if forward else -1   # 正转时前进1个单位，后转时倒退1个单位
+                # Not sure for this 
+                move_dist = 2 if forward else -2   # Forward dis after turning 
+               
                 x_new = x + move_dist * math.cos(theta)
                 y_new = y + move_dist * math.sin(theta)
                 self.draw_line_world(x, y, x_new, y_new, tag="actual_route", color="purple")
