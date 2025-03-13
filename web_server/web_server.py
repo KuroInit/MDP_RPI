@@ -289,10 +289,10 @@ def send_target_identification(obstacle_number: str, target_id: str):
 
 
 def snap_handler(command: str, obid: str):
-
     try:
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         best_conf = 0.0
+        best_area = 0.0
         best_result = None
         best_result_charactor = "NA"
         best_frame_path = None
@@ -309,14 +309,12 @@ def snap_handler(command: str, obid: str):
             return
 
         for i in range(3):
-
             frame_path = os.path.join(RESULT_IMAGE_DIR, f"SNAP{obid}_{i}.jpg")
             frame = picam2.capture_array()
             cv2.imwrite(frame_path, frame)
             logger.info(f"Captured image: {frame_path}")
             if frame is None or frame.size == 0:
-
-                logger.error(f"Cannot load image captured : {frame_path}")
+                logger.error(f"Cannot load image captured: {frame_path}")
                 continue
 
             if model is None:
@@ -324,30 +322,49 @@ def snap_handler(command: str, obid: str):
                 continue
 
             results = model(frame, verbose=False)
-            logger.info(f"Model inference")
+            logger.info("Model inference completed.")
 
+            # Iterate over all detections in each result
             for result in results:
                 if (
                     result.boxes is not None
                     and result.boxes.conf is not None
                     and len(result.boxes.conf) > 0
                 ):
+                    for j in range(len(result.boxes.conf)):
+                        conf_val = float(result.boxes.conf[j])
+                        # Skip detections below the threshold
+                        if conf_val < CONF_THRESHOLD:
+                            continue
 
-                    conf_tensor = result.boxes.conf
-                    max_conf = float(conf_tensor.max())
-                    idx = int(conf_tensor.argmax())
+                        # Skip Bullseye detection (class ID 30)
+                        if int(result.boxes.cls[j]) == 30:
+                            continue
 
-                    if result.boxes.cls[idx] == 30:
-                        continue  # Skip Bullseye detection
+                        # Calculate bounding box area from xyxy coordinates
+                        bbox = result.boxes.xyxy[j]
+                        bbox = bbox.tolist() if hasattr(bbox, "tolist") else list(bbox)
+                        x1, y1, x2, y2 = bbox
+                        area = (x2 - x1) * (y2 - y1)
 
-                    if max_conf > best_conf and max_conf >= CONF_THRESHOLD:
-                        best_conf = max_conf
-                        best_result_id = int(result.boxes.cls[idx])
-                        best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
-                            list(NAME_TO_CHARACTOR.values()).index(best_result_id)
-                        ]
-                        best_result = result
-                        best_frame_path = frame_path
+                        # Check if this detection is a better candidate
+                        if conf_val > best_conf:
+                            best_conf = conf_val
+                            best_area = area
+                            best_result_id = int(result.boxes.cls[j])
+                            best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
+                                list(NAME_TO_CHARACTOR.values()).index(best_result_id)
+                            ]
+                            best_result = result
+                            best_frame_path = frame_path
+                        elif conf_val == best_conf and area > best_area:
+                            best_area = area
+                            best_result_id = int(result.boxes.cls[j])
+                            best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
+                                list(NAME_TO_CHARACTOR.values()).index(best_result_id)
+                            ]
+                            best_result = result
+                            best_frame_path = frame_path
 
             time.sleep(1)
 
@@ -368,7 +385,7 @@ def snap_handler(command: str, obid: str):
                 frame = cv2.imread(best_frame_path)
                 cv2.imwrite(result_image_path, frame)
 
-        # return iamge id
+        # Return image id (detected character)
         return best_result_charactor
 
     except Exception as e:
