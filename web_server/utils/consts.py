@@ -32,8 +32,8 @@ EXPANDED_CELL = 1 # for both agent and obstacles
 WIDTH = 20
 HEIGHT = 20
 
-ITERATIONS = 2000
+ITERATIONS = 1500
 TURN_RADIUS = 1
 
-SAFE_COST = 3000 # the cost for the turn in case there is a chance that the robot is touch some obstacle
+SAFE_COST = 4000 # the cost for the turn in case there is a chance that the robot is touch some obstacle
 SCREENSHOT_COST = 50 # the cost for the place where the picture is taken
