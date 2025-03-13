@@ -324,8 +324,8 @@ def handle_cmd(parts, logger, client_sock):
                 return
 
             # Update robot position
-            robot_position["x"] = arena_data["robot_x"] - 1
-            robot_position["y"] = arena_data["robot_y"] - 1
+            robot_position["x"] = arena_data["robot_x"]
+            robot_position["y"] = arena_data["robot_y"]
 
             # Validate and update robot direction
             robot_dir_str = arena_data["robot_dir"].upper()
