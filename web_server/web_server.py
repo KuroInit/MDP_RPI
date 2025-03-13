@@ -342,7 +342,7 @@ def snap_handler(command: str, obid: str):
                         best_result = result
                         best_frame_path = frame_path
 
-            time.sleep(1) 
+            time.sleep(0.7) 
 
         picam2.close()
 
@@ -431,13 +431,13 @@ def run_task1(result: dict):
                         ack_received = True
                     else:
                         logger.info("ACK not received yet; waiting...")
-                        time.sleep(1)  # Delay before checking again
+                        time.sleep(0.5)  # Delay before checking again
                 except Exception as e:
                     logger.error(f"Error sending command {command}: {e}")
-                    time.sleep(1)  # Wait before retrying on error
+                    time.sleep(0.5)  # Wait before retrying on error
 
         # Delay between commands; adjust as needed based on robot response time.
-        time.sleep(1)
+        time.sleep(0.5)
 
     logger.info("Task1 execution complete")
 
