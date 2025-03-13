@@ -7,8 +7,8 @@ from web_server.utils.entities.Entity import Obstacle, CellState, Grid
 from web_server.utils.consts import Direction, MOVE_DIRECTION, TURN_FACTOR, ITERATIONS, TURN_RADIUS, SAFE_COST
 from python_tsp.exact import solve_tsp_dynamic_programming
 
-turn_wrt_big_turns = [[3 * TURN_RADIUS, 0.5 * TURN_RADIUS],
-                  [4 * TURN_RADIUS, 2 * TURN_RADIUS]]
+turn_wrt_big_turns = [[3 * TURN_RADIUS, 1 * TURN_RADIUS],
+                  [3 * TURN_RADIUS, 2 * TURN_RADIUS]]
 
 
 class PathFinder:
