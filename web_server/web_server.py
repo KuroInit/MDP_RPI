@@ -114,12 +114,15 @@ STM_SOCKET_PATH = "/tmp/stm_ipc.sock"
 RESULT_IMAGE_DIR = os.path.join(os.getcwd(), "web_server", "result_image")
 os.makedirs(RESULT_IMAGE_DIR, exist_ok=True)
 
-MODEL_PATH = os.path.join(os.getcwd(), "web_server", "utils", "trained_models", "v9_noise_bg.onnx")
+MODEL_PATH = os.path.join(
+    os.getcwd(), "web_server", "utils", "trained_models", "v9_noise_bg.onnx"
+)
 try:
     model = YOLO(MODEL_PATH)
 except Exception as e:
     logger.error(f"Loading Model Failed: {e}")
     model = None
+
 
 # System resource analysis
 def get_system_info():
@@ -197,7 +200,6 @@ class PathFindingRequest(BaseModel):
 @app.get("/")
 def readRoot():
     return {"Backend": "Running"}
-
 
 
 @app.post("/path")
@@ -298,7 +300,7 @@ def snap_handler(command: str, obid: str):
         try:
             picam2 = Picamera2()
             picam2.configure(picam2.create_still_configuration())
-            config = picam2.create_still_configuration() 
+            config = picam2.create_still_configuration()
             picam2.configure(config)
             picam2.start()
             logger.info("Camera initialized.")
@@ -307,7 +309,7 @@ def snap_handler(command: str, obid: str):
             return
 
         for i in range(3):
-            
+
             frame_path = os.path.join(RESULT_IMAGE_DIR, f"SNAP{obid}_{i}.jpg")
             frame = picam2.capture_array()
             cv2.imwrite(frame_path, frame)
@@ -322,15 +324,21 @@ def snap_handler(command: str, obid: str):
                 continue
 
             results = model(frame, verbose=False)
-            logger.info(f"Model inference")  
+            logger.info(f"Model inference")
 
             for result in results:
-                if result.boxes is not None and result.boxes.conf is not None and len(result.boxes.conf) > 0:
-                    if result.boxes.cls[idx] == 30:
-                        continue # Skip Bullseye detection
+                if (
+                    result.boxes is not None
+                    and result.boxes.conf is not None
+                    and len(result.boxes.conf) > 0
+                ):
+
                     conf_tensor = result.boxes.conf
                     max_conf = float(conf_tensor.max())
                     idx = int(conf_tensor.argmax())
+
+                    if result.boxes.cls[idx] == 30:
+                        continue  # Skip Bullseye detection
 
                     if max_conf > best_conf and max_conf >= CONF_THRESHOLD:
                         best_conf = max_conf
@@ -341,7 +349,7 @@ def snap_handler(command: str, obid: str):
                         best_result = result
                         best_frame_path = frame_path
 
-            time.sleep(1) 
+            time.sleep(1)
 
         picam2.close()
 
@@ -351,34 +359,37 @@ def snap_handler(command: str, obid: str):
             frame = cv2.imread(best_frame_path)
             annotated_frame = best_result.plot()
             cv2.imwrite(result_image_path, annotated_frame)
-            logger.info(f"Detected ID: {best_result_charactor}, Confidence: {best_conf}, Saved to: {best_frame_path}, Save Path: {result_image_path}")
+            logger.info(
+                f"Detected ID: {best_result_charactor}, Confidence: {best_conf}, Saved to: {best_frame_path}, Save Path: {result_image_path}"
+            )
         else:
             logger.info("No valid result found.")
             if best_frame_path is not None:
                 frame = cv2.imread(best_frame_path)
                 cv2.imwrite(result_image_path, frame)
 
-        #return iamge id        
+        # return iamge id
         return best_result_charactor
-   
+
     except Exception as e:
         logger.error(f"Error in snap_handler: {e}")
+
 
 def stitchImage():
 
     imgFolder = RESULT_IMAGE_DIR  # Directory where SNAP images are stored
-    stitchedPath = os.path.join(imgFolder, 'SNAPALLSTITCHED.jpg')
-    
+    stitchedPath = os.path.join(imgFolder, "SNAPALLSTITCHED.jpg")
+
     # Get paths of all SNAP images (SNAPBEST{obid}.jpg)
     imgPaths = glob.glob(os.path.join(imgFolder, "SNAPBEST*.jpg"))
-    
+
     # Check if there are any images to stitch
     if not imgPaths:
         print("No SNAP images found to stitch.")
         return
 
     images = [cv2.imread(x) for x in imgPaths]
-    
+
     # Check if all images were successfully loaded
     if any(img is None for img in images):
         print("Error: One or more images could not be loaded.")
@@ -387,21 +398,22 @@ def stitchImage():
     # Calculate total width and max height for the stitched image
     total_width = sum(img.shape[1] for img in images)
     max_height = max(img.shape[0] for img in images)
-    
+
     # Create a new blank image with the calculated dimensions
-    stitchedImg = 255 * np.ones(shape=[max_height, total_width, 3], dtype=np.uint8)  # White background
+    stitchedImg = 255 * np.ones(
+        shape=[max_height, total_width, 3], dtype=np.uint8
+    )  # White background
 
     # Paste each image into the stitched image
     x_offset = 0
     for img in images:
-        stitchedImg[:img.shape[0], x_offset:x_offset + img.shape[1]] = img
+        stitchedImg[: img.shape[0], x_offset : x_offset + img.shape[1]] = img
         x_offset += img.shape[1]
-    
+
     # Save the stitched image using OpenCV
     cv2.imwrite(stitchedPath, stitchedImg)
-   
-    print(f"Stitched image saved to: {stitchedPath}")
 
+    print(f"Stitched image saved to: {stitchedPath}")
 
 
 def run_task1(result: dict):
@@ -414,12 +426,16 @@ def run_task1(result: dict):
         if command.upper().startswith("SNAP"):
             ob_id = command[4:]
             target_id = snap_handler(command, ob_id)
-            target_id_android = NAME_TO_CHARACTOR_ANDROID.get(target_id, "NA")  # Default to NA if not found
-            send_target_identification(ob_id, target_id_android) #send ob id and target id to bluetooth
-        elif (command == "FIN"):
+            target_id_android = NAME_TO_CHARACTOR_ANDROID.get(
+                target_id, "NA"
+            )  # Default to NA if not found
+            send_target_identification(
+                ob_id, target_id_android
+            )  # send ob id and target id to bluetooth
+        elif command == "FIN":
             stitchImage()
             notify_bluetooth("FIN", 1)
-            break 
+            break
         else:
             ack_received = False
             while not ack_received:
@@ -443,6 +459,5 @@ def run_task1(result: dict):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
