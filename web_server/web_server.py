@@ -19,11 +19,13 @@ from ultralytics import YOLO
 import onnxruntime
 import numpy as np
 import sys
+import signal  
 from flask import jsonify
 
 
 # Use Picamera2 instead of the legacy PiCamera
 from picamera2 import Picamera2
+siganl.signal(signal.SIGTERM, shutdown_handler)
 
 NAME_TO_CHARACTOR = {
     "NA": "NA",
@@ -121,6 +123,9 @@ except Exception as e:
     logger.error(f"Loading Model Failed: {e}")
     model = None
 
+def shutdown_handler(singma, frame):
+    logging.info("Received termination signal")
+    sys.exit(0)
 
 # System resource analysis
 def get_system_info():
@@ -444,5 +449,8 @@ def run_task1(result: dict):
 
 if __name__ == "__main__":
     import uvicorn
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=8000)
+    except:
+        shutdown_handler(signal.SIGTERM, None)
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
