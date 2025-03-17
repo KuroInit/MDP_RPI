@@ -248,53 +248,53 @@ def send_command(command):
         print(f"Serial error: {e}")
 
 
-def capture_and_check():
-    """
-    Captures an image using libcamera-jpeg and runs inference using the local YOLO ONNX model.
-    Returns True if the detected face is valid (i.e. not "Bullseye"), otherwise False.
-    """
-    if not capture_image_with_libcamera_jpeg():
-        return False
+# def capture_and_check():
+#     """
+#     Captures an image using libcamera-jpeg and runs inference using the local YOLO ONNX model.
+#     Returns True if the detected face is valid (i.e. not "Bullseye"), otherwise False.
+#     """
+#     if not capture_image_with_libcamera_jpeg():
+#         return False
 
-    try:
-        # Load the image using Pillow and ensure it's in RGB format.
-        image = Image.open(CAPTURED_IMAGE_PATH).convert("RGB")
-        frame = np.array(image)
-    except Exception as e:
-        print("Failed to load the captured image:", e)
-        return False
+#     try:
+#         # Load the image using Pillow and ensure it's in RGB format.
+#         image = Image.open(CAPTURED_IMAGE_PATH).convert("RGB")
+#         frame = np.array(image)
+#     except Exception as e:
+#         print("Failed to load the captured image:", e)
+#         return False
 
-    # Verify the image is as expected.
-    if frame is None or frame.size == 0:
-        print("Failed to load the captured image or image is empty.")
-        return False
+#     # Verify the image is as expected.
+#     if frame is None or frame.size == 0:
+#         print("Failed to load the captured image or image is empty.")
+#         return False
 
-    if frame.dtype != np.uint8:
-        print(f"Captured frame has dtype {frame.dtype}; converting to uint8.")
-        frame = frame.astype(np.uint8)
+#     if frame.dtype != np.uint8:
+#         print(f"Captured frame has dtype {frame.dtype}; converting to uint8.")
+#         frame = frame.astype(np.uint8)
 
-    # Run inference on the captured frame.
-    results = model(frame, verbose=False)
-    detected_character = "NA"
-    for result in results:
-        if (
-            result.boxes is not None
-            and result.boxes.conf is not None
-            and len(result.boxes.conf) > 0
-        ):
-            conf_tensor = result.boxes.conf
-            max_conf = float(conf_tensor.max())
-            idx = int(conf_tensor.argmax())
-            if max_conf >= 0.5:  # Confidence threshold; adjust as needed.
-                best_result_id = int(result.boxes.cls[idx])
-                # Map the detected numeric id back to a name.
-                for key, val in NAME_TO_CHARACTER.items():
-                    if val == best_result_id:
-                        detected_character = key
-                        break
-    print("Detected character:", detected_character)
-    # Valid face is any face that is not "Bullseye"
-    return detected_character != "Bullseye"
+#     # Run inference on the captured frame.
+#     results = model(frame, verbose=False)
+#     detected_character = "NA"
+#     for result in results:
+#         if (
+#             result.boxes is not None
+#             and result.boxes.conf is not None
+#             and len(result.boxes.conf) > 0
+#         ):
+#             conf_tensor = result.boxes.conf
+#             max_conf = float(conf_tensor.max())
+#             idx = int(conf_tensor.argmax())
+#             if max_conf >= 0.5:  # Confidence threshold; adjust as needed.
+#                 best_result_id = int(result.boxes.cls[idx])
+#                 # Map the detected numeric id back to a name.
+#                 for key, val in NAME_TO_CHARACTER.items():
+#                     if val == best_result_id:
+#                         detected_character = key
+#                         break
+#     print("Detected character:", detected_character)
+#     # Valid face is any face that is not "Bullseye"
+#     return detected_character != "Bullseye"
 
 def startcarpark():
     send_command("UF100") # Forward till first 10x10 block
