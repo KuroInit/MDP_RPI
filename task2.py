@@ -36,7 +36,7 @@ def left_around_obs1():
     Not implemented
     """
 
-    # Forward left 45 degrees
+    # Forward left 45 degreesq
     # Forward right 45 degrees
     # Forward forward 13 cm (front of car slightly in front of obstacle)
     # Forward right 45 degrees
