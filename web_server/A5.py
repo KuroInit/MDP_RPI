@@ -296,42 +296,141 @@ def capture_and_check():
     # Valid face is any face that is not "Bullseye"
     return detected_character != "Bullseye"
 
+def startcarpark():
+    send_command("UF100") # Forward till first 10x10 block
+    time.sleep(0.5)
+    target_id = snap_handler()
+    target_id_android = NAME_TO_CHARACTOR_ANDROID.get(target_id, "NA")
+    return target_id_android
 
-def check_block_faces():
+def obstacle1_left():
+    send_command("LF090")
+    time.sleep(0.5)
+    send_command("RF090")
+    time.sleep(0.5)
+    send_command("KF100") # RIGHT IR trace till edge of obstacle 1
+    time.sleep(0.5)
+    send_command("RF090")
+    time.sleep(0.5)
+    send_command("LF090")
+    time.sleep(0.5)
+    send_command("UF100")
+    time.sleep(0.5)
+    target_id = snap_handler()
+    target_id_android = NAME_TO_CHARACTOR_ANDROID.get(target_id, "NA")
+    return target_id_android    
+
+
+def obstacle1_right():
+    send_command("RF090")
+    time.sleep(0.5)
+    send_command("LF090")
+    time.sleep(0.5)
+    send_command("IF100") # LEFT IR trace till edge of obstacle 1
+    time.sleep(0.5)
+    send_command("LF090")
+    time.sleep(0.5)
+    send_command("RF090")
+    time.sleep(0.5)
+    send_command("UF100")
+    time.sleep(0.5)
+    target_id = snap_handler()
+    target_id_android = NAME_TO_CHARACTOR_ANDROID.get(target_id, "NA")
+    return target_id_android     
+
+def obstacle2_left():
+    Displacement = "000"
+    send_command("LF090")
+    time.sleep(0.5)
+    # start tracking displacement here (replace line)
+    # Displacement =
+    send_command("KF100")
+    time.sleep(0.5)
+    send_command("RF090")
+    time.sleep(0.5)
+    send_command("RF090")
+    time.sleep(0.5)
+    send_command("KF100")
+    time.sleep(0.5)
+    send_command("RF090")
+    time.sleep(0.5)
+    send_command("RF090")
+    time.sleep(0.5)
+    send_command("SF000") # Displacement value (replace)
+    time.sleep(0.5)
+    send_command("LF090")
+    time.sleep(0.5)
+    send_command("UF100")
+    return
+
+def obstacle2_right():
+    Displacement = "000"
+    send_command("RF090")
+    time.sleep(0.5)
+    # start tracking displacement here (replace line)
+    # Displacement =
+    send_command("IF100")
+    time.sleep(0.5)
+    send_command("LF090")
+    time.sleep(0.5)
+    send_command("LF090")
+    time.sleep(0.5)
+    send_command("IF100")
+    time.sleep(0.5)
+    send_command("LF090")
+    time.sleep(0.5)
+    send_command("LF090")
+    time.sleep(0.5)
+    send_command("SF000") # Displacement value (replace)
+    time.sleep(0.5)
+    send_command("RF090")
+    time.sleep(0.5)
+    send_command("UF100")
+    return
+
+def endcapark():
+    send_command("LF090")
+    time.sleep(0.5)
+    send_command("RF090")
+    time.sleep(0.5)
+    send_command("RF090")
+    time.sleep(0.5)
+    send_command("LF090")
+    time.sleep(0.5)
+    send_command("VF100")
+
+def runtask2():
     """
-    Checks each of the 4 faces of a square object.
+    Code for task 2 here (yet to implement measure distance on stm)
     """
-    valid_face_found = False
+    Arrow1 = "NA"
+    Arrow2 = "NA"
 
-    for face in range(4):
-        print(f"\nChecking face {face + 1}...")
-        send_command("SF030")  # Move forward 10 cm.
-        time.sleep(1)
+    Arrow1 = startcarpark()
+    time.sleep(0.5)
 
-        if capture_and_check():
-            print(f"Valid face found on face {face + 1}.")
-            valid_face_found = True
-            break
-        else:
-            print(f"Face {face + 1} is not valid.")
-            send_command("LF090")  # Turn left.
-            time.sleep(2)
-            send_command("SF010")  # Move straight.
-            time.sleep(2)
-            send_command("RF090")  # Turn right.
-            time.sleep(2)
-            send_command("SF010")  # Move straight.
-            time.sleep(2)
-            send_command("LB090")  # Turn right again.
-            time.sleep(2)
+    if Arrow1 == "39": # Obs 1 - Left Arrow
+        Arrow2 = obstacle1_left
+    elif Arrow1 == "38": # Obs 1 - Right Arrow
+        Arrow2 = obstacle1_left
+    else:
+        print("Error executing carpark code")
+    
+    time.sleep(0.5)
 
-    if not valid_face_found:
-        print("No valid face found on any side.")
-    return valid_face_found
+    if Arrow2 == "39": # Obs 2 - Left Arrow
+        obstacle2_left
+    elif Arrow2 == "38": # Obs 2 - Right Arrow
+        obstacle2_right
+    else:
+        print("Error executing obstacle 1 code")    
 
+    time.sleep(0.5)
+    endcapark
+    return
 
 if __name__ == "__main__":
-    if check_block_faces():
-        print("Robot has found a valid face. Stopping further movements.")
+    if runtask2():
+        print("Task 2 completed.")
     else:
-        print("Robot did not find a valid face.")
+        print("Task 2 failed to run successfully.")
