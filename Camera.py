@@ -7,6 +7,7 @@ import cv2
 import time
 from datetime import datetime
 
+# Change this to RPI Directory
 FOLDER_PATH = "/home/pi/Documents/SC2079-MDP-Group-29/rpi_updated/mdp-rpi/ImageCapture"
 IMAGE_PREPROCESSED_FOLDER_PATH = "/home/pi/Documents/SC2079-MDP-Group-29/rpi_updated/mdp-rpi/ImagePreProcessed"
 
