@@ -412,7 +412,7 @@ def runtask2():
     if Arrow1 == "39": # Obs 1 - Left Arrow
         Arrow2 = obstacle1_left
     elif Arrow1 == "38": # Obs 1 - Right Arrow
-        Arrow2 = obstacle1_left
+        Arrow2 = obstacle1_right
     else:
         print("Error executing carpark code")
     
