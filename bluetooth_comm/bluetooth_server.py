@@ -369,6 +369,7 @@ def handle_cmd(parts, logger, client_sock):
         send_obstacle_data(logger)
         send_text_message(client_sock, "Task switched to Exploration Mode", logger)
     elif command == "beginfastest":
+        #task 2 code run A5.py
         logger.info("Task switched to Fastest Path Mode")
         send_text_message(client_sock, "Task switched to Fastest Path Mode", logger)
     elif command == "resetmap":

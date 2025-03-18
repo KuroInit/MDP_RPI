@@ -230,6 +230,20 @@ def snap_handler():
     except Exception as e:
         logger.error(f"Error in snap_handler: {e}")
 
+def adjust_distance_to_obstacle(current_distance):
+    target_distance = 20
+    difference = abs(current_distance - target_distance)
+    if current_distance > target_distance:
+        if len(str(difference)) == 2:
+            command = f"SB0{difference}"  # Move backward
+        else:
+            command = f"SB{difference}"
+    else:
+        if len(str(difference)) == 2:
+            command = f"SF0{difference}"  # Move forward
+        else:
+            command = f"SF{difference}"
+    return command
 
 def send_command(command):
     """
