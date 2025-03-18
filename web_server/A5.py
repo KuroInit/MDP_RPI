@@ -22,6 +22,7 @@ import numpy as np
 import sys
 from flask import jsonify
 from picamera2 import Picamera2
+from stm_comm import serial_comm
 
 # Define confidence threshold
 CONF_THRESHOLD = 0.4
@@ -322,43 +323,41 @@ def send_command(command):
 #     return detected_character != "Bullseye"
 
 def startcarpark():
-    send_command("UF100") # Forward till first 10x10 block
+    send_command("UF200") # Forward till first 10x10 block
     time.sleep(0.5)
     target_id = snap_handler()
     target_id_android = NAME_TO_CHARACTOR_ANDROID.get(target_id, "NA")
     return target_id_android
 
 def obstacle1_left():
-    send_command("LF090")
+    send_command("LF050")
     time.sleep(0.5)
-    send_command("RF090")
+    send_command("RF050")
     time.sleep(0.5)
-    send_command("KF100") # RIGHT IR trace till edge of obstacle 1
+    send_command("SF010")
     time.sleep(0.5)
-    send_command("RF090")
+    send_command("RF050")
     time.sleep(0.5)
-    send_command("LF090")
+    send_command("LF050")
     time.sleep(0.5)
-    send_command("UF100")
-    time.sleep(0.5)
+    #function return value of the ob according to ultrasonic sensor if less than 20 move back if more than 20 call uf200
     target_id = snap_handler()
     target_id_android = NAME_TO_CHARACTOR_ANDROID.get(target_id, "NA")
     return target_id_android    
 
 
 def obstacle1_right():
-    send_command("RF090")
+    send_command("RF050")
     time.sleep(0.5)
-    send_command("LF090")
+    send_command("LF050")
     time.sleep(0.5)
-    send_command("IF100") # LEFT IR trace till edge of obstacle 1
+    send_command("SF010")
     time.sleep(0.5)
-    send_command("LF090")
+    send_command("LF050")
     time.sleep(0.5)
-    send_command("RF090")
+    send_command("RF050")
     time.sleep(0.5)
-    send_command("UF100")
-    time.sleep(0.5)
+    #function return value of the ob according to ultrasonic sensor if less than 20 move back if more than 20 call uf200
     target_id = snap_handler()
     target_id_android = NAME_TO_CHARACTOR_ANDROID.get(target_id, "NA")
     return target_id_android     
