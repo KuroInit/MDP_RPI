@@ -21,6 +21,16 @@ import onnxruntime
 import numpy as np
 import sys
 from flask import jsonify
+from picamera2 import Picamera2
+
+# Define confidence threshold
+CONF_THRESHOLD = 0.4
+
+RESULT_IMAGE_DIR = os.path.join(os.getcwd(), "web_server", "result_image")
+os.makedirs(RESULT_IMAGE_DIR, exist_ok=True)
+
+templates = Jinja2Templates(directory="web_server/templates")
+logger = loggers["webserver"]
 
 # Mapping of detection names to numeric values.
 NAME_TO_CHARACTOR = {
