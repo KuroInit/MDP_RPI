@@ -363,11 +363,29 @@ def obstacle1_right():
     return target_id_android     
 
 def obstacle2_left():
-    Displacement = "000"
+    # send_command("LF090")
+    # time.sleep(0.5)
+    # send_command("KF100")
+    # time.sleep(0.5)
+    # send_command("RF090")
+    # time.sleep(0.5)
+    # send_command("RF090")
+    # time.sleep(0.5)
+    # send_command("KF100")
+    # time.sleep(0.5)
+    # send_command("RF090")
+    # time.sleep(0.5)
+    # send_command("RF090")
+    # time.sleep(0.5)
+    # send_command("SF000") # Displacement value (replace)
+    # time.sleep(0.5)
+    # send_command("LF090")
+    # time.sleep(0.5)
+    # send_command("UF100")
     send_command("LF090")
     time.sleep(0.5)
-    # start tracking displacement here (replace line)
-    # Displacement =
+    send_command("SB028")
+    time.sleep(0.5)
     send_command("KF100")
     time.sleep(0.5)
     send_command("RF090")
@@ -380,19 +398,38 @@ def obstacle2_left():
     time.sleep(0.5)
     send_command("RF090")
     time.sleep(0.5)
-    send_command("SF000") # Displacement value (replace)
+    send_command("DF100")
     time.sleep(0.5)
-    send_command("LF090")
-    time.sleep(0.5)
-    send_command("UF100")
     return
 
 def obstacle2_right():
-    Displacement = "000"
+
+    # Displacement = "000"
+    # send_command("RF090")
+    # time.sleep(0.5)
+    # # start tracking displacement here (replace line)
+    # # Displacement =
+    # send_command("IF100")
+    # time.sleep(0.5)
+    # send_command("LF090")
+    # time.sleep(0.5)
+    # send_command("LF090")
+    # time.sleep(0.5)
+    # send_command("IF100")
+    # time.sleep(0.5)
+    # send_command("LF090")
+    # time.sleep(0.5)
+    # send_command("LF090")
+    # time.sleep(0.5)
+    # send_command("SF000") # Displacement value (replace)
+    # time.sleep(0.5)
+    # send_command("RF090")
+    # time.sleep(0.5)
+    # send_command("UF100")
     send_command("RF090")
     time.sleep(0.5)
-    # start tracking displacement here (replace line)
-    # Displacement =
+    send_command("SB028")
+    time.sleep(0.5)
     send_command("IF100")
     time.sleep(0.5)
     send_command("LF090")
@@ -405,11 +442,8 @@ def obstacle2_right():
     time.sleep(0.5)
     send_command("LF090")
     time.sleep(0.5)
-    send_command("SF000") # Displacement value (replace)
+    send_command("DF100")
     time.sleep(0.5)
-    send_command("RF090")
-    time.sleep(0.5)
-    send_command("UF100")
     return
 
 def endcapark():
