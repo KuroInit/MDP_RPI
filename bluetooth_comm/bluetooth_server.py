@@ -7,9 +7,234 @@ import threading
 import requests
 from config.logging_config import loggers
 from web_server.web_server import send_command_to_stm
+import cv2
+import serial
+from PIL import Image  # Use Pillow to load images
+import onnx
+import time
+import subprocess
+import psutil
+import glob
+from fastapi import FastAPI, Request, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+from web_server.utils.imageRec import loadModel, predictImage
+from stm_comm.serial_comm import notify_bluetooth
+import cv2
 from ultralytics import YOLO
 import onnxruntime
-import cv2
+import numpy as np
+from flask import jsonify
+from picamera2 import Picamera2
+from stm_comm import serial_comm
+
+
+# Define confidence threshold
+CONF_THRESHOLD = 0.4
+
+RESULT_IMAGE_DIR = os.path.join(os.getcwd(), "web_server", "result_image")
+os.makedirs(RESULT_IMAGE_DIR, exist_ok=True)
+
+templates = Jinja2Templates(directory="web_server/templates")
+logger = loggers["webserver"]
+
+# Mapping of detection names to numeric values.
+NAME_TO_CHARACTOR = {
+    "NA": "NA",
+    "Bullseye": 30,
+    "One": 0,
+    "Two": 1,
+    "Three": 2,
+    "Four": 3,
+    "Five": 4,
+    "Six": 5,
+    "Seven": 6,
+    "Eight": 7,
+    "Nine": 8,
+    "A": 9,
+    "B": 10,
+    "C": 11,
+    "D": 12,
+    "E": 13,
+    "F": 14,
+    "G": 15,
+    "H": 16,
+    "S": 17,
+    "T": 18,
+    "U": 19,
+    "V": 20,
+    "W": 21,
+    "X": 22,
+    "Y": 23,
+    "Z": 24,
+    "Up": 25,
+    "Down": 26,
+    "Right": 27,
+    "Left": 28,
+    "Stop": 29,
+}
+
+NAME_TO_CHARACTOR_ANDROID = {
+    "One": "11",
+    "Two": "12",
+    "Three": "13",
+    "Four": "14",
+    "Five": "15",
+    "Six": "16",
+    "Seven": "17",
+    "Eight": "18",
+    "Nine": "19",
+    "A": "20",
+    "B": "21",
+    "C": "22",
+    "D": "23",
+    "E": "24",
+    "F": "25",
+    "G": "26",
+    "H": "27",
+    "S": "28",
+    "T": "29",
+    "U": "30",
+    "V": "31",
+    "W": "32",
+    "X": "33",
+    "Y": "34",
+    "Z": "35",
+    "Up": "36",
+    "Down": "37",
+    "Right": "38",
+    "Left": "39",
+    "Stop": "40",
+}
+
+
+# Load the YOLO ONNX model locally.
+MODEL_PATH = "utils/trained_models/v9_noise_bg.onnx"
+model = YOLO(MODEL_PATH)
+
+# Path to temporarily store captured image.
+CAPTURED_IMAGE_PATH = "capture.jpg"
+
+def snap_handler():
+    try:
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        best_conf = 0.0
+        best_area = 0.0
+        best_result = None
+        best_result_charactor = "NA"
+        best_frame_path = None
+
+        try:
+            picam2 = Picamera2()
+            picam2.configure(picam2.create_still_configuration())
+            config = picam2.create_still_configuration()
+            picam2.configure(config)
+            picam2.start()
+            logger.info("Camera initialized.")
+        except Exception as e:
+            logger.error(f"Error initializing camera: {e}")
+            return
+
+        for i in range(3):
+            frame_path = os.path.join(RESULT_IMAGE_DIR, f"SNAP{timestamp}_{i}.jpg")
+            frame = picam2.capture_array()
+            cv2.imwrite(frame_path, frame)
+            logger.info(f"Captured image: {frame_path}")
+            if frame is None or frame.size == 0:
+                logger.error(f"Cannot load image captured: {frame_path}")
+                continue
+
+            if model is None:
+                logger.error("Model not loaded; skipping inference.")
+                continue
+
+            results = model(frame, verbose=False)
+            logger.info("Model inference completed.")
+
+            # Iterate over all detections in each result
+            for result in results:
+                if (
+                    result.boxes is not None
+                    and result.boxes.conf is not None
+                    and len(result.boxes.conf) > 0
+                ):
+                    for j in range(len(result.boxes.conf)):
+                        conf_val = float(result.boxes.conf[j])
+                        # Skip detections below the threshold
+                        if conf_val < CONF_THRESHOLD:
+                            continue
+
+                        # Skip Bullseye detection (class ID 30)
+                        if int(result.boxes.cls[j]) == 30:
+                            continue
+
+                        # Calculate bounding box area from xyxy coordinates
+                        bbox = result.boxes.xyxy[j]
+                        bbox = bbox.tolist() if hasattr(bbox, "tolist") else list(bbox)
+                        x1, y1, x2, y2 = bbox
+                        area = (x2 - x1) * (y2 - y1)
+
+                        # If current detection has a higher confidence, update immediately.
+                        if conf_val > best_conf:
+                            best_conf = conf_val
+                            best_area = area
+                            best_result_id = int(result.boxes.cls[j])
+                            best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
+                                list(NAME_TO_CHARACTOR.values()).index(best_result_id)
+                            ]
+                            best_result = result
+                            best_frame_path = frame_path
+                        # If the detection's confidence is within 10% of the best, compare the bounding box area.
+                        elif (
+                            best_conf > 0
+                            and (conf_val / best_conf >= 0.9)
+                            and (area > best_area)
+                        ):
+                            best_area = area
+                            best_result_id = int(result.boxes.cls[j])
+                            best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
+                                list(NAME_TO_CHARACTOR.values()).index(best_result_id)
+                            ]
+                            best_result = result
+                            best_frame_path = frame_path
+
+            time.sleep(1)
+
+        picam2.close()
+
+        # Save the annotated image
+        result_image_path = os.path.join(RESULT_IMAGE_DIR, f"SNAPBEST{timestamp}.jpg")
+        if best_result is not None and best_frame_path is not None:
+            frame = cv2.imread(best_frame_path)
+            annotated_frame = best_result.plot()
+            cv2.imwrite(result_image_path, annotated_frame)
+            logger.info(
+                f"Detected ID: {best_result_charactor}, Confidence: {best_conf}, Saved to: {best_frame_path}, Save Path: {result_image_path}"
+            )
+        else:
+            logger.info("No valid result found.")
+            if best_frame_path is not None:
+                frame = cv2.imread(best_frame_path)
+                cv2.imwrite(result_image_path, frame)
+
+        # Return the detected character (image id)
+        return best_result_charactor
+
+    except Exception as e:
+        logger.error(f"Error in snap_handler: {e}")
+
+def adjust_distance_to_obstacle(current_distance: str):
+    int_current_distance = int(current_distance)
+    command = f"SB000" 
+    target_distance = 20
+    difference = abs(int_current_distance  - target_distance)
+    if int_current_distance > target_distance:
+        command = f"SB0{difference}"  # Move backward
+    else:
+        command = f"SF0{difference}"  #move backward
+    return command
 
 # Ensure project root is in sys.path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
