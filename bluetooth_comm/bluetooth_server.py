@@ -111,7 +111,7 @@ NAME_TO_CHARACTOR_ANDROID = {
 
 
 # Load the YOLO ONNX model locally.
-MODEL_PATH = "utils/trained_models/v9_noise_bg.onnx"
+MODEL_PATH = "utils/trained_models/v8_white_bg.onnx"
 model = YOLO(MODEL_PATH)
 
 # Path to temporarily store captured image.
@@ -667,25 +667,78 @@ def start_bt_ipc_listener():
         finally:
             conn.close()
 
+def check_for_ack(command: str):
+    response = send_command_to_stm(command)
+    logger.info(f"Sent command: {command}, STM response: {response}")
+    a_received = False
+    while not a_received:
+        if "A" in response:
+            a_received = True  # ACK received
+        else:
+            time.sleep(0.5)
 
+Obs1_Left = ["LF060", "RF060", "RF060", "LF060"]
+Obs1_Right = ["RF060", "LF060", "LF060", "RF060"]
+Obs2_Left = ["LF090", "SB027", "KF200", "RF090", "RF090", "KF200", "RF090"]
+Obs2_Right = ["RF090", "SB027", "IF200", "LF090", "LF090", "IF200", "LF090"]
+Home_Left = ["RA100", "SH100", "LA100"]
+Home_Right = ["LA100", "SH100", "RA100"]
 def beginFastest():
     # RESET STM
     send_command_to_stm("DF100")
     time.sleep(1)
 
     # From Carpark
-    ERROR_FLAG_CP = send_command_to_stm("UF200")
-    if (ERROR_FLAG_CP )
-    print(ERROR_FLAG_CP)
-
+    check_for_ack("UF200")
+    target1_id = snap_handler()
+    arrow1_id = NAME_TO_CHARACTOR_ANDROID.get(target1_id, "NA")
+    
     # first object (SNAP)
+    if arrow1_id == "39":
+        for command in Obs1_Left:
+            check_for_ack(command)
+    elif arrow1_id == "38":
+        for command in Obs1_Right:
+            check_for_ack(command)
+    else:
+        print("Running Obstacle 1 error")
+        
     # Transverse past first object
+    check_for_ack("UF200")
+    dist = check_for_ack("EF100")
+    check_for_ack(adjust_distance_to_obstacle(dist))
+
+
     # second object (SNAP)
+    target2_id = snap_handler()
+    arrow2_id = NAME_TO_CHARACTOR_ANDROID.get(target2_id, "NA")
+
     # Transverse past second
-    # move forward straight
-    # move next to first object
+    if arrow2_id == "39":
+        for command in Obs2_Left:
+            check_for_ack(command)
+    elif arrow2_id == "38":
+        for command in Obs2_Right:
+            check_for_ack(command)
+    else:
+        print("Running Obstacle 2 error")
+
+    # move forward straight to first object
+    check_for_ack("SA100")
+
     # RA100, SH100 or LA100, SH100
+    if arrow2_id == "39":
+        for command in Home_Left:
+            check_for_ack(command)
+    elif arrow2_id == "38":
+        for command in Home_Right:
+            check_for_ack(command)
+    else:
+        print("Return Past Obstacle 1 error")
+
     # VF200
+    check_for_ack("VF200")
+
     return
 
 
