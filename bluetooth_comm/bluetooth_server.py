@@ -683,11 +683,8 @@ def beginFastest():
 
     # Transverse past first object
     send_command_to_stm("UF200")
-    dist = int(send_command_to_stm("EF100"))
-    target_distance = 30
-    if (dist > target_distance and (dist - target_distance) < 0):
-        send_command_to_stm("SB015")
-        send_command_to_stm("UF200")
+    send_command_to_stm("SB015") # For safety - Reverse
+    send_command_to_stm("UF200")
 
     # second object (SNAP)
     target2_id = snap_handler()
