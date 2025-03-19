@@ -117,6 +117,15 @@ model = YOLO(MODEL_PATH)
 # Path to temporarily store captured image.
 CAPTURED_IMAGE_PATH = "capture.jpg"
 
+Obs1_Left = ["LF060", "RF060", "RF060", "LF060"]
+Obs1_Right = ["RF060", "LF060", "LF060", "RF060"]
+Obs2_Left = ["LF090", "SB027", "KF200", "RF090", "RF090", "KF200", "RF090"]
+Obs2_Right = ["RF090", "SB027", "IF200", "LF090", "LF090", "IF200", "LF090"]
+Home_Left = ["RA100", "SH100", "LA100"]
+Home_Right = ["LA100", "SH100", "RA100"]
+
+
+
 def snap_handler():
     try:
         timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -660,7 +669,15 @@ def start_bt_ipc_listener():
 
 
 def beginFastest():
+    # RESET STM
+    send_command_to_stm("DF100")
+    time.sleep(1)
+
     # From Carpark
+    ERROR_FLAG_CP = send_command_to_stm("UF200")
+    if (ERROR_FLAG_CP )
+    print(ERROR_FLAG_CP)
+
     # first object (SNAP)
     # Transverse past first object
     # second object (SNAP)
