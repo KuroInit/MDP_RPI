@@ -685,7 +685,7 @@ def beginFastest():
     send_command_to_stm("UF200")
     dist = send_command_to_stm("EF100")
     target_distance = 20
-    if (dist > target_distance & (dist - target_distance) < 20):
+    if (dist > target_distance and (dist - target_distance) < 20):
         send_command_to_stm("SB015")
         send_command_to_stm("UF200")
 
