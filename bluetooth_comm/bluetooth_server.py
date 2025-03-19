@@ -676,13 +676,7 @@ def check_for_ack(command: str):
             a_received = True  # ACK received
         else:
             time.sleep(0.5)
-
-Obs1_Left = ["LF060", "RF060", "RF060", "LF060"]
-Obs1_Right = ["RF060", "LF060", "LF060", "RF060"]
-Obs2_Left = ["LF090", "SB027", "KF200", "RF090", "RF090", "KF200", "RF090"]
-Obs2_Right = ["RF090", "SB027", "IF200", "LF090", "LF090", "IF200", "LF090"]
-Home_Left = ["RA100", "SH100", "LA100"]
-Home_Right = ["LA100", "SH100", "RA100"]
+            
 def beginFastest():
     # RESET STM
     send_command_to_stm("DF100")
