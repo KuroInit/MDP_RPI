@@ -117,13 +117,13 @@ model = YOLO(MODEL_PATH)
 # Path to temporarily store captured image.
 CAPTURED_IMAGE_PATH = "capture.jpg"
 
-Obs1_Left = ["LF060", "RF060", "RF060", "LF060"]
-Obs1_Right = ["RF060", "LF060", "LF060", "RF060"]
+Obs1_Left = ["LF060", "RF060", "SF010", "RF060", "LF060"]
+Obs1_Right = ["RF060", "LF060", "SF010", "LF060", "RF060"]
 Obs2_Left = ["LF090", "SB027", "KF200", "RF090", "RF090", "KF200", "RF090"]
 Obs2_Right = ["RF090", "SB027", "IF200", "LF090", "LF090", "IF200", "LF090"]
 Home_Left = ["RA100", "SH100", "LA100"]
 Home_Right = ["LA100", "SH100", "RA100"]
-
+S
 
 def snap_handler():
     try:
