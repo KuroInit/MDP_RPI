@@ -117,11 +117,11 @@ def start_ipc_server(ser, socket_path="/tmp/stm_ipc.sock"):
                             logger.info("Waiting for ACK from STM...")
                             time.sleep(0.5)
                     # notify_bluetooth(command, 1)
-                    conn.send(
+                    """ conn.send(
                         ("OK: " + (response if response else "No response")).encode(
                             "utf-8"
                         )
-                    )
+                    ) """
 
             else:
                 logger.warning("No data received on IPC connection.")
