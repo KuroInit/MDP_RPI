@@ -6,6 +6,10 @@ import socket
 import threading
 import requests
 from config.logging_config import loggers
+from web_server.web_server import send_command_to_stm
+from ultralytics import YOLO
+import onnxruntime
+import cv2
 
 # Ensure project root is in sys.path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -369,9 +373,11 @@ def handle_cmd(parts, logger, client_sock):
         send_obstacle_data(logger)
         send_text_message(client_sock, "Task switched to Exploration Mode", logger)
     elif command == "beginfastest":
-        #task 2 code run A5.py
         logger.info("Task switched to Fastest Path Mode")
         send_text_message(client_sock, "Task switched to Fastest Path Mode", logger)
+        beginFastest()
+        logger.info("Task Successfully Completed")
+        send_text_message(client_sock, "Task Successfully Completed", logger)
     elif command == "resetmap":
         obstacles_list.clear()
         robot_position = {"x": 1, "y": 1, "dir": 0}
@@ -426,6 +432,19 @@ def start_bt_ipc_listener():
             logger.error("Error handling BT IPC connection: " + str(e))
         finally:
             conn.close()
+
+
+def beginFastest():
+    # From Carpark
+    # first object (SNAP)
+    # Transverse past first object
+    # second object (SNAP)
+    # Transverse past second
+    # move forward straight
+    # move next to first object
+    # RA100, SH100 or LA100, SH100
+    # VF200
+    return
 
 
 if __name__ == "__main__":
