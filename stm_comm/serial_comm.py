@@ -104,7 +104,7 @@ def start_ipc_server(ser, socket_path="/tmp/stm_ipc.sock"):
                 if command.upper() in exclusion_list:
                     logger.info("Command is in exclusion list, skipping ACK wait.")
                     # notify_bluetooth(command, 1)
-                    conn.send(b"OK: Command sent (no ACK check for exclusion command)")
+                    # conn.send(b"OK: Command sent (no ACK check for exclusion command)")
                 else:
                     ack_received = False
                     response = ""

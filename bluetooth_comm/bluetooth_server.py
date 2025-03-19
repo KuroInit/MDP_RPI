@@ -125,7 +125,6 @@ Home_Left = ["RA100", "SH100", "LA100"]
 Home_Right = ["LA100", "SH100", "RA100"]
 
 
-
 def snap_handler():
     try:
         timestamp = time.strftime("%Y%m%d_%H%M%S")
@@ -234,20 +233,22 @@ def snap_handler():
     except Exception as e:
         logger.error(f"Error in snap_handler: {e}")
 
+
 def adjust_distance_to_obstacle(current_distance: str):
     int_current_distance = int(current_distance)
-    logger.info(f'{int_current_distance}')
-    command = f"SB000" 
+    logger.info(f"{int_current_distance}")
+    command = f"SB000"
     target_distance = 20
-    difference = abs(int_current_distance  - target_distance)
-    logger.info(f'{difference}')
+    difference = abs(int_current_distance - target_distance)
+    logger.info(f"{difference}")
     if int_current_distance > target_distance:
         command = f"SB0{difference}"  # Move backward
-        logger.info(f'{command}')
+        logger.info(f"{command}")
     else:
-        command = f"SF0{difference}"  #move backward
-        logger.info(f'{command}')
+        command = f"SF0{difference}"  # move backward
+        logger.info(f"{command}")
     return command
+
 
 # Ensure project root is in sys.path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -670,7 +671,8 @@ def start_bt_ipc_listener():
             logger.error("Error handling BT IPC connection: " + str(e))
         finally:
             conn.close()
-            
+
+
 def beginFastest():
     # RESET STM
     send_command_to_stm("DF100")
@@ -680,7 +682,7 @@ def beginFastest():
     send_command_to_stm("UF200")
     target1_id = snap_handler()
     arrow1_id = NAME_TO_CHARACTOR_ANDROID.get(target1_id, "NA")
-    
+
     # first object (SNAP)
     if arrow1_id == "39":
         for command in Obs1_Left:
@@ -690,12 +692,11 @@ def beginFastest():
             send_command_to_stm(command)
     else:
         print("Running Obstacle 1 error")
-        
+
     # Transverse past first object
     send_command_to_stm("UF200")
     dist = send_command_to_stm("EF100")
     send_command_to_stm(adjust_distance_to_obstacle(dist))
-
 
     # second object (SNAP)
     target2_id = snap_handler()
