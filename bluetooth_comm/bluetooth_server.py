@@ -700,7 +700,7 @@ def beginFastest():
         
     # Transverse past first object
     check_for_ack("UF200")
-    dist = check_for_ack("EF100")
+    dist = send_command_to_stm("EF100")
     check_for_ack(adjust_distance_to_obstacle(dist))
 
 
