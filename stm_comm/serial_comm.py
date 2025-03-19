@@ -75,6 +75,8 @@ def read_response(ser):
 
 
 def start_ipc_server(ser, socket_path="/tmp/stm_ipc.sock"):
+    exclusion_list = ["UF200", "EF100"]
+
     if os.path.exists(socket_path):
         os.remove(socket_path)
     server_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -95,17 +97,35 @@ def start_ipc_server(ser, socket_path="/tmp/stm_ipc.sock"):
                     conn.send(b"OK: FIN received, returning to wait state")
                     continue
 
-                # Send the command to the STM without waiting for an ACK.
+                # Send the command to the STM
                 send_command(ser, command)
-                logger.info(
-                    f"Command '{command}' sent to STM without waiting for an ACK."
-                )
 
-                # Notify Bluetooth and immediately respond to the IPC client.
-                notify_bluetooth(command, 1)
-                conn.send(b"OK: Command sent")
+                # Check if the command is in the exclusion list
+                if command.upper() in exclusion_list:
+                    logger.info("Command is in exclusion list, skipping ACK wait.")
+                    notify_bluetooth(command, 1)
+                    conn.send(b"OK: Command sent (no ACK check for exclusion command)")
+                else:
+                    ack_received = False
+                    response = ""
+                    while not ack_received:
+                        response = read_response(ser)
+                        if response and "A" in response:
+                            ack_received = True
+                            logger.info(f"ACK received from STM for command: {command}")
+                        else:
+                            logger.info("Waiting for ACK from STM...")
+                            time.sleep(0.5)
+                    notify_bluetooth(command, 1)
+                    conn.send(
+                        ("OK: " + (response if response else "No response")).encode(
+                            "utf-8"
+                        )
+                    )
+
             else:
                 logger.warning("No data received on IPC connection.")
+
         except Exception as e:
             logger.error("Error handling IPC connection: " + str(e))
         finally:
