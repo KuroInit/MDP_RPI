@@ -123,7 +123,7 @@ Obs2_Left = ["LF090", "SB027", "KF200", "RF090", "RF090", "KF200", "RF090"]
 Obs2_Right = ["RF090", "SB027", "IF200", "LF090", "LF090", "IF200", "LF090"]
 Home_Left = ["RA100", "SH100", "LA100"]
 Home_Right = ["LA100", "SH100", "RA100"]
-S
+
 
 def snap_handler():
     try:
@@ -183,13 +183,21 @@ def snap_handler():
                         best_conf = conf_val
                         best_area = area
                         best_result_id = int(result.boxes.cls[j])
-                        best_result_charactor = list(NAME_TO_CHARACTOR.keys())[list(NAME_TO_CHARACTOR.values()).index(best_result_id)]
+                        best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
+                            list(NAME_TO_CHARACTOR.values()).index(best_result_id)
+                        ]
                         best_result = result
                         best_frame_path = frame_path
-                    elif best_conf > 0 and (conf_val / best_conf >= 0.9) and (area > best_area):
+                    elif (
+                        best_conf > 0
+                        and (conf_val / best_conf >= 0.9)
+                        and (area > best_area)
+                    ):
                         best_area = area
                         best_result_id = int(result.boxes.cls[j])
-                        best_result_charactor = list(NAME_TO_CHARACTOR.keys())[list(NAME_TO_CHARACTOR.values()).index(best_result_id)]
+                        best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
+                            list(NAME_TO_CHARACTOR.values()).index(best_result_id)
+                        ]
                         best_result = result
                         best_frame_path = frame_path
 
