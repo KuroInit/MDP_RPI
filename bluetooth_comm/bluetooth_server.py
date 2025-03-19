@@ -676,7 +676,6 @@ def check_for_ack(command: str):
             a_received = True  # ACK received
         else:
             logger.info("ACK not received yet; waiting...")
-            time.sleep(0.5)
             
 def beginFastest():
     # RESET STM
