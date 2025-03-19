@@ -236,13 +236,17 @@ def snap_handler():
 
 def adjust_distance_to_obstacle(current_distance: str):
     int_current_distance = int(current_distance)
+    logger.info(f'{int_current_distance}')
     command = f"SB000" 
     target_distance = 20
     difference = abs(int_current_distance  - target_distance)
+    logger.info(f'{difference}')
     if int_current_distance > target_distance:
         command = f"SB0{difference}"  # Move backward
+        logger.info(f'{command}')
     else:
         command = f"SF0{difference}"  #move backward
+        logger.info(f'{command}')
     return command
 
 # Ensure project root is in sys.path
