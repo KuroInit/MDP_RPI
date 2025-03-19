@@ -225,17 +225,17 @@ def snap_handler():
         logger.error(f"Error in snap_handler: {e}")
 
 
-def adjust_distance_to_obstacle(current_distance: str):
-    int_current_distance = int(current_distance)
-    logger.info(f"{int_current_distance}")
-    command = f"SB001"
-    target_distance = 20
-    difference = abs(int_current_distance - target_distance)
-    logger.info(f"{difference}")
-    if int_current_distance > target_distance:
-        command = f"SB0{difference}"  # Move backward
-        logger.info(f"{command}")
-    return command
+# def adjust_distance_to_obstacle(current_distance: str):
+#     int_current_distance = int(current_distance)
+#     logger.info(f"{int_current_distance}")
+#     command = f"SB001"
+#     target_distance = 20
+#     difference = abs(int_current_distance - target_distance)
+#     logger.info(f"{difference}")
+#     if int_current_distance > target_distance:
+#         command = f"SB0{difference}"  # Move backward
+#         logger.info(f"{command}")
+#     return command
 
 
 # Ensure project root is in sys.path
@@ -683,8 +683,8 @@ def beginFastest():
 
     # Transverse past first object
     send_command_to_stm("UF200")
-    dist = send_command_to_stm("EF100")
-    send_command_to_stm(adjust_distance_to_obstacle(dist))
+    # dist = send_command_to_stm("EF100")
+    # send_command_to_stm(adjust_distance_to_obstacle(dist))
 
     # second object (SNAP)
     target2_id = snap_handler()
