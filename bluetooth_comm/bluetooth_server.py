@@ -119,8 +119,8 @@ CAPTURED_IMAGE_PATH = "capture.jpg"
 
 Obs1_Left = ["LF060", "RF060", "RF063", "LF058"]
 Obs1_Right = ["RF060", "LF060", "LF065", "RF068"]
-Obs2_Left = ["LF090", "SB027", "KF200", "RF087", "RF087", "KF200", "RF090"]
-Obs2_Right = ["RF090", "SB027", "IF200", "LF087", "LF087", "IF200", "LF090"]
+Obs2_Left = ["LF090", "SB027", "KF200", "RF090", "RF087", "KF200", "RF095"]
+Obs2_Right = ["RF090", "SB027", "IF200", "LF090", "LF087", "IF200", "LF095"]
 Home_Left = ["RA100", "SH100", "LA100"]
 Home_Right = ["LA100", "SH100", "RA100"]
 
