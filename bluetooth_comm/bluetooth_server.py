@@ -680,8 +680,8 @@ def check_for_ack(command: str):
             
 def beginFastest():
     # RESET STM
-    send_command_to_stm("DF100")
-    time.sleep(1)
+    # send_command_to_stm("DF100")
+    # time.sleep(1)
 
     # From Carpark
     check_for_ack("UF200")
