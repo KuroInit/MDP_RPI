@@ -145,70 +145,53 @@ def snap_handler():
             logger.error(f"Error initializing camera: {e}")
             return
 
-        for i in range(3):
-            frame_path = os.path.join(RESULT_IMAGE_DIR, f"SNAP{timestamp}_{i}.jpg")
-            frame = picam2.capture_array()
-            cv2.imwrite(frame_path, frame)
-            logger.info(f"Captured image: {frame_path}")
-            if frame is None or frame.size == 0:
-                logger.error(f"Cannot load image captured: {frame_path}")
-                continue
+        frame_path = os.path.join(RESULT_IMAGE_DIR, f"SNAP{timestamp}.jpg")
+        frame = picam2.capture_array()
+        cv2.imwrite(frame_path, frame)
+        logger.info(f"Captured image: {frame_path}")
 
-            if model is None:
-                logger.error("Model not loaded; skipping inference.")
-                continue
+        if frame is None or frame.size == 0:
+            logger.error(f"Cannot load image captured: {frame_path}")
+            return
 
-            results = model(frame, verbose=False)
-            logger.info("Model inference completed.")
+        if model is None:
+            logger.error("Model not loaded; skipping inference.")
+            return
 
-            # Iterate over all detections in each result
-            for result in results:
-                if (
-                    result.boxes is not None
-                    and result.boxes.conf is not None
-                    and len(result.boxes.conf) > 0
-                ):
-                    for j in range(len(result.boxes.conf)):
-                        conf_val = float(result.boxes.conf[j])
-                        # Skip detections below the threshold
-                        if conf_val < CONF_THRESHOLD:
-                            continue
+        results = model(frame, verbose=False)
+        logger.info("Model inference completed.")
 
-                        # Skip Bullseye detection (class ID 30)
-                        if int(result.boxes.cls[j]) == 30:
-                            continue
+        for result in results:
+            if (
+                result.boxes is not None
+                and result.boxes.conf is not None
+                and len(result.boxes.conf) > 0
+            ):
+                for j in range(len(result.boxes.conf)):
+                    conf_val = float(result.boxes.conf[j])
+                    if conf_val < CONF_THRESHOLD:
+                        continue
+                    if int(result.boxes.cls[j]) == 30:
+                        continue
 
-                        # Calculate bounding box area from xyxy coordinates
-                        bbox = result.boxes.xyxy[j]
-                        bbox = bbox.tolist() if hasattr(bbox, "tolist") else list(bbox)
-                        x1, y1, x2, y2 = bbox
-                        area = (x2 - x1) * (y2 - y1)
+                    bbox = result.boxes.xyxy[j]
+                    bbox = bbox.tolist() if hasattr(bbox, "tolist") else list(bbox)
+                    x1, y1, x2, y2 = bbox
+                    area = (x2 - x1) * (y2 - y1)
 
-                        # If current detection has a higher confidence, update immediately.
-                        if conf_val > best_conf:
-                            best_conf = conf_val
-                            best_area = area
-                            best_result_id = int(result.boxes.cls[j])
-                            best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
-                                list(NAME_TO_CHARACTOR.values()).index(best_result_id)
-                            ]
-                            best_result = result
-                            best_frame_path = frame_path
-                        # If the detection's confidence is within 10% of the best, compare the bounding box area.
-                        elif (
-                            best_conf > 0
-                            and (conf_val / best_conf >= 0.9)
-                            and (area > best_area)
-                        ):
-                            best_area = area
-                            best_result_id = int(result.boxes.cls[j])
-                            best_result_charactor = list(NAME_TO_CHARACTOR.keys())[
-                                list(NAME_TO_CHARACTOR.values()).index(best_result_id)
-                            ]
-                            best_result = result
-                            best_frame_path = frame_path
-
-            time.sleep(1)
+                    if conf_val > best_conf:
+                        best_conf = conf_val
+                        best_area = area
+                        best_result_id = int(result.boxes.cls[j])
+                        best_result_charactor = list(NAME_TO_CHARACTOR.keys())[list(NAME_TO_CHARACTOR.values()).index(best_result_id)]
+                        best_result = result
+                        best_frame_path = frame_path
+                    elif best_conf > 0 and (conf_val / best_conf >= 0.9) and (area > best_area):
+                        best_area = area
+                        best_result_id = int(result.boxes.cls[j])
+                        best_result_charactor = list(NAME_TO_CHARACTOR.keys())[list(NAME_TO_CHARACTOR.values()).index(best_result_id)]
+                        best_result = result
+                        best_frame_path = frame_path
 
         picam2.close()
 
@@ -243,9 +226,6 @@ def adjust_distance_to_obstacle(current_distance: str):
     logger.info(f"{difference}")
     if int_current_distance > target_distance:
         command = f"SB0{difference}"  # Move backward
-        logger.info(f"{command}")
-    else:
-        command = f"SF0{difference}"  # move backward
         logger.info(f"{command}")
     return command
 
