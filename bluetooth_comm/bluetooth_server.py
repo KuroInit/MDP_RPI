@@ -228,7 +228,7 @@ def snap_handler():
 def adjust_distance_to_obstacle(current_distance: str):
     int_current_distance = int(current_distance)
     logger.info(f"{int_current_distance}")
-    command = f"SB000"
+    command = f"SB001"
     target_distance = 20
     difference = abs(int_current_distance - target_distance)
     logger.info(f"{difference}")
