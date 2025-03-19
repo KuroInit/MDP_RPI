@@ -675,6 +675,7 @@ def check_for_ack(command: str):
         if "A" in response:
             a_received = True  # ACK received
         else:
+            logger.info("ACK not received yet; waiting...")
             time.sleep(0.5)
             
 def beginFastest():
