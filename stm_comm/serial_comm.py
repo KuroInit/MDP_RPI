@@ -95,27 +95,17 @@ def start_ipc_server(ser, socket_path="/tmp/stm_ipc.sock"):
                     conn.send(b"OK: FIN received, returning to wait state")
                     continue
 
+                # Send the command to the STM without waiting for an ACK.
                 send_command(ser, command)
-
-                ack_received = False
-                response = ""
-                while not ack_received:
-                    response = read_response(ser)
-                    if response and "A" in response:
-                        ack_received = True
-                        logger.info(f"ACK received from STM for command: {command}")
-                    else:
-                        logger.info("Waiting for ACK from STM...")
-                        time.sleep(0.5)
-
-                notify_bluetooth(command,1)
-                conn.send(
-                    ("OK: " + (response if response else "No response")).encode("utf-8")
+                logger.info(
+                    f"Command '{command}' sent to STM without waiting for an ACK."
                 )
 
+                # Notify Bluetooth and immediately respond to the IPC client.
+                notify_bluetooth(command, 1)
+                conn.send(b"OK: Command sent")
             else:
                 logger.warning("No data received on IPC connection.")
-
         except Exception as e:
             logger.error("Error handling IPC connection: " + str(e))
         finally:
