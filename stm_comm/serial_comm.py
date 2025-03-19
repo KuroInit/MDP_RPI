@@ -75,7 +75,7 @@ def read_response(ser):
 
 
 def start_ipc_server(ser, socket_path="/tmp/stm_ipc.sock"):
-    exclusion_list = ["UF200", "EF100"]
+    exclusion_list = ["EF100", "DF100"]
 
     if os.path.exists(socket_path):
         os.remove(socket_path)
