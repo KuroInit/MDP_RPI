@@ -666,41 +666,31 @@ def start_bt_ipc_listener():
             logger.error("Error handling BT IPC connection: " + str(e))
         finally:
             conn.close()
-
-def check_for_ack(command: str):
-    response = send_command_to_stm(command)
-    logger.info(f"Sent command: {command}, STM response: {response}")
-    a_received = False
-    while not a_received:
-        if "A" in response:
-            a_received = True  # ACK received
-        else:
-            logger.info("ACK not received yet; waiting...")
             
 def beginFastest():
     # RESET STM
-    # send_command_to_stm("DF100")
-    # time.sleep(1)
+    send_command_to_stm("DF100")
+    time.sleep(1)
 
     # From Carpark
-    check_for_ack("UF200")
+    send_command_to_stm("UF200")
     target1_id = snap_handler()
     arrow1_id = NAME_TO_CHARACTOR_ANDROID.get(target1_id, "NA")
     
     # first object (SNAP)
     if arrow1_id == "39":
         for command in Obs1_Left:
-            check_for_ack(command)
+            send_command_to_stm(command)
     elif arrow1_id == "38":
         for command in Obs1_Right:
-            check_for_ack(command)
+            send_command_to_stm(command)
     else:
         print("Running Obstacle 1 error")
         
     # Transverse past first object
-    check_for_ack("UF200")
+    send_command_to_stm("UF200")
     dist = send_command_to_stm("EF100")
-    check_for_ack(adjust_distance_to_obstacle(dist))
+    send_command_to_stm(adjust_distance_to_obstacle(dist))
 
 
     # second object (SNAP)
@@ -710,28 +700,28 @@ def beginFastest():
     # Transverse past second
     if arrow2_id == "39":
         for command in Obs2_Left:
-            check_for_ack(command)
+            send_command_to_stm(command)
     elif arrow2_id == "38":
         for command in Obs2_Right:
-            check_for_ack(command)
+            send_command_to_stm(command)
     else:
         print("Running Obstacle 2 error")
 
     # move forward straight to first object
-    check_for_ack("SA100")
+    send_command_to_stm("SA100")
 
     # RA100, SH100 or LA100, SH100
     if arrow2_id == "39":
         for command in Home_Left:
-            check_for_ack(command)
+            send_command_to_stm(command)
     elif arrow2_id == "38":
         for command in Home_Right:
-            check_for_ack(command)
+            send_command_to_stm(command)
     else:
         print("Return Past Obstacle 1 error")
 
     # VF200
-    check_for_ack("VF200")
+    send_command_to_stm("VF200")
 
     return
 
