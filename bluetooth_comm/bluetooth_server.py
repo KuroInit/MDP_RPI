@@ -664,7 +664,7 @@ def start_bt_ipc_listener():
 def beginFastest():
     # RESET STM
     send_command_to_stm("DF100")
-    time.sleep(1)
+    time.sleep(5)
 
     # From Carpark
     send_command_to_stm("UF200")
