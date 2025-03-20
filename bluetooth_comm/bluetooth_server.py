@@ -118,7 +118,7 @@ model = YOLO(MODEL_PATH)
 CAPTURED_IMAGE_PATH = "capture.jpg"
 
 Obs1_Left = ["LF060", "RF060", "RF063", "LF058"]
-Obs1_Right = ["RF065", "LF065", "LF060", "RF060"]
+Obs1_Right = ["RF065", "LF065", "LF060", "RF063"]
 Obs2_Left = ["LF090", "SB027", "KF200", "RF095", "RF087", "KF200", "RF095"]
 Obs2_Right = ["RF090", "SB027", "IF200", "LF087", "LF088", "IF200", "LF088"]
 Home_Left = ["RA100", "MF200", "KF200", "LA100"]
