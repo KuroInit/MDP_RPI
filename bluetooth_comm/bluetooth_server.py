@@ -117,9 +117,15 @@ model = YOLO(MODEL_PATH)
 # Path to temporarily store captured image.
 CAPTURED_IMAGE_PATH = "capture.jpg"
 
-Obs1_Left = ["LF060", "RF060", "RF055", "LF062"]
-Obs1_Right = ["RF065", "LF065", "LF060", "RF062"]
-Obs2_Left = ["LF090", "SB027", "KF200", "RF095", "RF087", "KF200", "RF095"]
+# Obs1_Left = ["LF060", "RF060", "RF055", "LF062"]
+# Obs1_Right = ["RF065", "LF065", "LF060", "RF062"]
+# Obs2_Left = ["LF090", "SB027", "KF200", "RF095", "RF087", "KF200", "RF095"]
+# Obs2_Right = ["RF090", "SB027", "IF200", "LF090", "LF090", "IF200", "LF090"]
+# Home_Left = ["RA100", "MF200", "KF200", "LA100"]
+# Home_Right = ["LA100", "JF200", "IF200", "RA100"]
+Obs1_Left = ["LF060", "RF060", "RF060", "LF060"]
+Obs1_Right = ["RF060", "LF060", "LF060", "RF060"]
+Obs2_Left = ["LF090", "SB027", "KF200", "RF090", "RF090", "KF200", "RF090"]
 Obs2_Right = ["RF090", "SB027", "IF200", "LF090", "LF090", "IF200", "LF090"]
 Home_Left = ["RA100", "MF200", "KF200", "LA100"]
 Home_Right = ["LA100", "JF200", "IF200", "RA100"]
