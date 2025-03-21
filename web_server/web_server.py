@@ -1,6 +1,7 @@
 import time
 import os
 import subprocess
+import uvicorn
 import psutil
 import socket
 import glob
@@ -11,7 +12,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from web_server.utils.pathFinder import PathFinder
 from web_server.utils.helper import commandGenerator
-from config.logging_config import loggers  # Import Loguru config
+from config.logging_config import loggers
 from web_server.utils.imageRec import loadModel, predictImage
 from stm_comm.serial_comm import notify_bluetooth
 import cv2
@@ -20,9 +21,6 @@ import onnxruntime
 import numpy as np
 import sys
 from flask import jsonify
-
-
-# Use Picamera2 instead of the legacy PiCamera
 from picamera2 import Picamera2
 
 NAME_TO_CHARACTOR = {
@@ -93,9 +91,9 @@ NAME_TO_CHARACTOR_ANDROID = {
     "Stop": "40",
 }
 
-# Define confidence threshold
 CONF_THRESHOLD = 0.4
 
+# Logger
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -108,7 +106,6 @@ app.add_middleware(
 templates = Jinja2Templates(directory="web_server/templates")
 logger = loggers["webserver"]
 
-# Define the socket path used for IPC with the STM service
 STM_SOCKET_PATH = "/tmp/stm_ipc.sock"
 
 RESULT_IMAGE_DIR = os.path.join(os.getcwd(), "web_server", "result_image")
@@ -124,9 +121,7 @@ except Exception as e:
     model = None
 
 
-# System resource analysis
 def get_system_info():
-    """Retrieve system resource usage and temperature."""
     cpu_usage = psutil.cpu_percent(interval=1)
     memory = psutil.virtual_memory()
     memory_used = memory.used / (1024**2)
@@ -139,7 +134,7 @@ def get_system_info():
         with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
             temp = int(f.read().strip()) / 1000.0
     except FileNotFoundError:
-        temp = None  # Temp not available
+        temp = None 
 
     return {
         "cpu_usage": cpu_usage,
@@ -216,7 +211,6 @@ async def pathFinding(request: PathFindingRequest, background_tasks: BackgroundT
 
     maze_solver = PathFinder(20, 20, robot_x, robot_y, robot_direction, big_turn=None)
 
-    # Add obstacles
     for ob in obstacles:
         maze_solver.add_obstacle(ob["x"], ob["y"], ob["d"], ob["id"])
 
@@ -226,10 +220,8 @@ async def pathFinding(request: PathFindingRequest, background_tasks: BackgroundT
         f"Pathfinding time: {time.time() - start:.2f}s | Distance: {distance} units"
     )
 
-    # Generate movement commands
     commands = commandGenerator(optimal_path, obstacles)
 
-    # Process path results
     path_results = [optimal_path[0].get_dict()]
     i = 0
     for command in commands:
@@ -245,21 +237,16 @@ async def pathFinding(request: PathFindingRequest, background_tasks: BackgroundT
         "data": {"distance": distance, "path": path_results, "commands": commands},
         "error": None,
     }
-    # Automatically forward the result to run_task1 as a background task.
+
     background_tasks.add_task(run_task1, result)
     return result
 
 
-# Define a Pydantic model for STM commands
 class STMCommandRequest(BaseModel):
     command: str
 
 
 def send_command_to_stm(command: str, socket_path: str = STM_SOCKET_PATH) -> str:
-    """
-    Connects to the STM IPC server via a Unix Domain Socket,
-    sends the given command, and returns the response.
-    """
     client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     try:
         client.connect(socket_path)
@@ -275,10 +262,6 @@ def send_command_to_stm(command: str, socket_path: str = STM_SOCKET_PATH) -> str
 
 @app.post("/send-stm-command")
 async def send_stm_command(stm_command: STMCommandRequest):
-    """
-    Endpoint to send a command to the STM service via IPC.
-    The command is forwarded to the STM service, which then processes it.
-    """
     response = send_command_to_stm(stm_command.command)
     return {"stm_response": response}
 
@@ -324,7 +307,6 @@ def snap_handler(command: str, obid: str):
             results = model(frame, verbose=False)
             logger.info("Model inference completed.")
 
-            # Iterate over all detections in each result
             for result in results:
                 if (
                     result.boxes is not None
@@ -333,21 +315,17 @@ def snap_handler(command: str, obid: str):
                 ):
                     for j in range(len(result.boxes.conf)):
                         conf_val = float(result.boxes.conf[j])
-                        # Skip detections below the threshold
                         if conf_val < CONF_THRESHOLD:
                             continue
 
-                        # Skip Bullseye detection (class ID 30)
                         if int(result.boxes.cls[j]) == 30:
                             continue
 
-                        # Calculate bounding box area from xyxy coordinates
                         bbox = result.boxes.xyxy[j]
                         bbox = bbox.tolist() if hasattr(bbox, "tolist") else list(bbox)
                         x1, y1, x2, y2 = bbox
                         area = (x2 - x1) * (y2 - y1)
 
-                        # If current detection has a higher confidence, update immediately.
                         if conf_val > best_conf:
                             best_conf = conf_val
                             best_area = area
@@ -357,7 +335,7 @@ def snap_handler(command: str, obid: str):
                             ]
                             best_result = result
                             best_frame_path = frame_path
-                        # If the detection's confidence is within 10% of the best, compare the bounding box area.
+
                         elif (
                             best_conf > 0
                             and (conf_val / best_conf >= 0.9)
@@ -372,10 +350,8 @@ def snap_handler(command: str, obid: str):
                             best_frame_path = frame_path
 
             time.sleep(1)
-
         picam2.close()
 
-        # Save the annotated image
         result_image_path = os.path.join(RESULT_IMAGE_DIR, f"SNAPBEST{obid}.jpg")
         if best_result is not None and best_frame_path is not None:
             frame = cv2.imread(best_frame_path)
@@ -390,7 +366,6 @@ def snap_handler(command: str, obid: str):
                 frame = cv2.imread(best_frame_path)
                 cv2.imwrite(result_image_path, frame)
 
-        # Return the detected character (image id)
         return best_result_charactor
 
     except Exception as e:
@@ -399,40 +374,33 @@ def snap_handler(command: str, obid: str):
 
 def stitchImage():
 
-    imgFolder = RESULT_IMAGE_DIR  # Directory where SNAP images are stored
+    imgFolder = RESULT_IMAGE_DIR 
     stitchedPath = os.path.join(imgFolder, "SNAPALLSTITCHED.jpg")
 
-    # Get paths of all SNAP images (SNAPBEST{obid}.jpg)
     imgPaths = glob.glob(os.path.join(imgFolder, "SNAPBEST*.jpg"))
 
-    # Check if there are any images to stitch
     if not imgPaths:
         print("No SNAP images found to stitch.")
         return
 
     images = [cv2.imread(x) for x in imgPaths]
 
-    # Check if all images were successfully loaded
     if any(img is None for img in images):
         print("Error: One or more images could not be loaded.")
         return
 
-    # Calculate total width and max height for the stitched image
     total_width = sum(img.shape[1] for img in images)
     max_height = max(img.shape[0] for img in images)
 
-    # Create a new blank image with the calculated dimensions
     stitchedImg = 255 * np.ones(
         shape=[max_height, total_width, 3], dtype=np.uint8
-    )  # White background
+    )
 
-    # Paste each image into the stitched image
     x_offset = 0
     for img in images:
         stitchedImg[: img.shape[0], x_offset : x_offset + img.shape[1]] = img
         x_offset += img.shape[1]
 
-    # Save the stitched image using OpenCV
     cv2.imwrite(stitchedPath, stitchedImg)
 
     print(f"Stitched image saved to: {stitchedPath}")
@@ -450,10 +418,10 @@ def run_task1(result: dict):
             target_id = snap_handler(command, ob_id)
             target_id_android = NAME_TO_CHARACTOR_ANDROID.get(
                 target_id, "NA"
-            )  # Default to NA if not found
+            ) 
             send_target_identification(
                 ob_id, target_id_android
-            )  # send ob id and target id to bluetooth
+            )
         elif command == "FIN":
             stitchImage()
             notify_bluetooth("FIN", 1)
@@ -468,18 +436,14 @@ def run_task1(result: dict):
                         ack_received = True
                     else:
                         logger.info("ACK not received yet; waiting...")
-                        time.sleep(1)  # Delay before checking again
+                        time.sleep(1)
                 except Exception as e:
                     logger.error(f"Error sending command {command}: {e}")
-                    time.sleep(1)  # Wait before retrying on error
-
-        # Delay between commands; adjust as needed based on robot response time.
+                    time.sleep(1)
         time.sleep(1)
 
     logger.info("Task1 execution complete")
 
 
 if __name__ == "__main__":
-    import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=8000)
