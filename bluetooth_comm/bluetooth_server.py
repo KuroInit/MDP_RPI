@@ -31,7 +31,6 @@ from picamera2 import Picamera2
 from stm_comm import serial_comm
 
 
-# Define confidence threshold
 CONF_THRESHOLD = 0.4
 
 RESULT_IMAGE_DIR = os.path.join(os.getcwd(), "web_server", "result_image")
@@ -40,7 +39,7 @@ os.makedirs(RESULT_IMAGE_DIR, exist_ok=True)
 templates = Jinja2Templates(directory="web_server/templates")
 logger = loggers["webserver"]
 
-# Mapping of detection names to numeric values.
+
 NAME_TO_CHARACTOR = {
     "NA": "NA",
     "Bullseye": 30,
@@ -209,7 +208,6 @@ def snap_handler():
 
         picam2.close()
 
-        # Save the annotated image
         result_image_path = os.path.join(RESULT_IMAGE_DIR, f"SNAPBEST{timestamp}.jpg")
         if best_result is not None and best_frame_path is not None:
             frame = cv2.imread(best_frame_path)
@@ -224,24 +222,10 @@ def snap_handler():
                 frame = cv2.imread(best_frame_path)
                 cv2.imwrite(result_image_path, frame)
 
-        # Return the detected character (image id)
         return best_result_charactor
 
     except Exception as e:
         logger.error(f"Error in snap_handler: {e}")
-
-
-# def adjust_distance_to_obstacle(current_distance: str):
-#     int_current_distance = int(current_distance)
-#     logger.info(f"{int_current_distance}")
-#     command = f"SB001"
-#     target_distance = 20
-#     difference = abs(int_current_distance - target_distance)
-#     logger.info(f"{difference}")
-#     if int_current_distance > target_distance:
-#         command = f"SB0{difference}"  # Move backward
-#         logger.info(f"{command}")
-#     return command
 
 
 # Ensure project root is in sys.path
@@ -327,9 +311,7 @@ def process_message(parts, client_sock, logger):
         return
 
     msg_type = parts[0].upper()
-    # For CMD messages, if JSON data is included, ensure we preserve it.
     if msg_type == "CMD" and len(parts) < 3:
-        # Re-split with a max of 3 parts if possible
         message_str = ",".join(parts)
         parts = [p.strip() for p in message_str.split(",") if p.strip()]
 
@@ -390,7 +372,6 @@ def handle_obstacle(parts, logger):
         logger.error("Invalid obstacle parameters.")
         return
 
-    # 'facing' is optional; default to "UNKNOWN" if not provided.
     facing = parts[4].upper() if len(parts) > 4 else "UNKNOWN"
     direction = direction_map.get(facing, 4)
 
@@ -554,17 +535,17 @@ def handle_cmd(parts, logger, client_sock):
             json_data_str = ",".join(parts[2:])  # Join everything after 'sendArena'
             arena_data = json.loads(json_data_str)
 
-            # Validate that required keys exist
+            # Validate
             required_keys = ["robot_x", "robot_y", "robot_dir", "obstacles"]
             if not all(key in arena_data for key in required_keys):
                 logger.error("Invalid arena data: Missing required fields.")
                 return
 
-            # Update robot position
+            # Update robot pos
             robot_position["x"] = arena_data["robot_x"]
             robot_position["y"] = arena_data["robot_y"]
 
-            # Validate and update robot direction
+            # Validate and update robot dir
             robot_dir_str = arena_data["robot_dir"].upper()
             if robot_dir_str in direction_map:
                 robot_position["dir"] = direction_map[robot_dir_str]
@@ -576,12 +557,12 @@ def handle_cmd(parts, logger, client_sock):
             # Parse obstacles
             parsed_obstacles = []
             for obs in arena_data["obstacles"]:
-                # Ensure all required fields exist in obstacle data
+                # Ensure all required fields exist
                 if not all(k in obs for k in ["x", "y", "id", "d"]):
                     logger.warning(f"Skipping invalid obstacle data: {obs}")
                     continue  # Skip malformed obstacles
 
-                # Convert direction from string to numerical value
+                # Convert direction from string
                 obs_direction = obs["d"].upper()
                 if obs_direction in direction_map:
                     obs["d"] = direction_map[obs_direction]
@@ -629,10 +610,6 @@ def send_text_message(client_sock, message, logger):
 
 
 def start_bt_ipc_listener():
-    """
-    Starts a Unix Domain Socket listener for receiving notifications from the STM service.
-    When a notification is received, it is forwarded to the currently connected Bluetooth client.
-    """
     logger = loggers["bluetooth"]
     bt_socket_path = "/tmp/bt_ipc.sock"
     if os.path.exists(bt_socket_path):
@@ -649,7 +626,7 @@ def start_bt_ipc_listener():
             if data:
                 notification = data.decode("utf-8").strip()
                 logger.info("Received notification via IPC: " + notification)
-                # Forward the notification to the active Bluetooth client, if connected
+                # Forward the notification to the client
                 global active_bt_client
                 if active_bt_client:
                     try:
@@ -689,7 +666,7 @@ def beginFastest():
 
     # Transverse past first object
     send_command_to_stm("UF200")
-    send_command_to_stm("SB015") # For safety - Reverse
+    send_command_to_stm("SB015")  # For safety - Reverse
     send_command_to_stm("UF200")
 
     # second object (SNAP)
